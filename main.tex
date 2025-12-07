@@ -1,0 +1,482 @@
+\documentclass[12pt]{article}
+
+% Essential packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}  % For including PNG figures
+\usepackage{float}     % For better figure placement
+\usepackage{amsmath}   % For mathematical equations
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{hyperref}  % For hyperlinks
+\usepackage{url}       % For URLs in bibliography
+\usepackage{authblk}   % For author affiliations
+
+\DeclareMathOperator*{\argmin}{\arg\!\min}
+\DeclareMathOperator*{\minimize}{\text{minimize}}
+
+% Bibliography
+\usepackage[style=numeric,backend=biber]{biblatex}
+\addbibresource{ref.bib}
+
+% Page setup
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage{parskip}
+\onehalfspacing
+
+% Title information
+\title{Aligning the Universal Domain Description Language (UDDL) with Semantic Web Technologies}
+\author[1]{Nicholas McKibben}
+\author[2]{Joe Gregory}
+\author[3]{Alejandro Salado}
+\affil[1,2,3]{Department of Systems and Industrial Engineering, University of Arizona}
+\affil[1]{Skayl}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+The engineering of complex, software-intensive systems faces a pervasive challenge: data ambiguity.  As disparate systems ranging from avionics to industrial IoT (Internet of Things) attempt to exchange information, the semantic context of that data is often not communicated clearly and effectively, leading to additional unplanned integration effort and interoperability gaps.  The Universal Domain Description Language (UDDL) addresses this by providing a platform-independent data modeling language rooted in the separation of concerns between Conceptual, Logical, and Platform data models~\cite{OpenGroup2023UDDL}.  However, UDDL constructs are not well-studied in systems and interoperability literature while the Web Ontology Language (OWL) \cite{W3C_OWL2} and the Resource Description Framework (RDF) \cite{W3C_RDF11} (the de facto standard for semantic knowledge representation on the web) are actively researched and have rich tooling ecosystems.  We recognize UDDL use-cases as specializations of Sematic Web Technologies (SWTs) use-cases and that by bridging technology concepts both communities stand to gain insights in creating and utilizing data semantics. 
+
+In this paper we propose a mapping between UDDL and Semantic Web Technologies (SWT), specifically addressing the feasibility of mapping UDDL Conceptual model elements to SWTs.  While UDDL conceptual Entities and Generalizations map cleanly to OWL Classes and Subclasses, constructs such as ``Observables'', ``Associations'', and ``Participant Paths'' require Reification and Property Chains to preserve semantic fidelity.  We provide a mapping of UDDL's Query language and View structures to SPARQL \cite{W3C_SPARQL11} Property Paths and SHACL \cite{W3C_SHACL} constraints.  These mappings provide a blueprint for a UDDL to SWTs bridge that retains necessary semantic rigor while leveraging the inferential power of the Semantic Web ecosystem.
+\end{abstract}
+
+\section{Introduction} \label{section:introduction}
+
+In systems engineering, rigorous definition of data and interfaces is not merely a documentation exercise.  It is a fundamental requirement for the composition, maintenance, and future reuse of complex systems.  In traditional systems engineering, data dictionaries and interface control documents (ICDs) have served as the primary means of semantic capture.  (TODO: cite some things here).  However, these artifacts are often static in nature and reliant on human interpretation.  As noted in the UDDL Technical Specification, ``Adequately describing domain data is a common problem in computer-based systems. Typical approaches involve creating documentation to accompany artifacts \ldots in an attempt to capture the semantics of the data exchanged''~\cite{OpenGroup2023UDDL}.
+
+The failure of the traditional, document-based approaches to document data semantics stems from their inability to formally and precisely bind meaning to structure.  A variable labeled \texttt{alt} in a ICD may imply ``altitude'', but it may fail to specify a reference frame (e.g., ellipsoidal vs. geoidal), the unit of measure (meters vs. feet), or the conceptual domain (air operations vs. ground).  UDDL was specifically developed to fill this documentation gap, its objective being to ``formally document the meaning of data with the goal of eliminating ambiguity''~\cite{OpenGroup2023UDDL}.  It achieves this by enforcing a strict separation of concerns, distinguishing the identity of data from its context, and providing building blocks to construct formal definitions of the meaning of data flowing through interfaces.
+
+Parallel to the development of UDDL in the systems engineering space, the Semantic Web has evolved a robust stack of technologies designed for machine-readability and logical inference.  At the core of this stack are RDF (Resource Description Framework) and OWL (Web Ontology Language).  RDF provides a graph-based data model where knowledge is atomized into triples (Subject, Predicate, Object), offering high flexibility and linkability~\cite{W3C_RDF11}.  OWL extends RDF with formal logical semantics (Description Logics), enabling systems to define complex relationships, cardinality constraints, and classifications~\cite{W3C_OWL2}.
+
+To our knowledge, there is no existing literature showing interoperability, traceability, or mappings between UDDL data models and any Semantic Web Technologies and this paper serves as an initial attempt at formally bridging the technologies and approaches of two disparate communities of research and industry.
+
+The remainder of the Introduction will provide brief overviews of UDDL  and Semantic Web Technologies to serve as context for the mappings described in the Theory section.  Section \ref{section:introduction-uddl-overview} introduces the UDDL meta-model and grammar that specify its data modeling language.  Section \ref{section:introduction-swts-overview} describes the SWTs that will be useful in mapping UDDL concepts.
+
+\subsection{UDDL} \label{section:introduction-uddl-overview}
+
+\subsubsection{Meta-Model Overview}
+
+The UDDL technical standard utilizes a multi-level modeling approach summarized in Table \ref{tab:uddl_levels}~\cite{OpenGroup2023UDDL}:
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{0.25\linewidth}|p{0.35\linewidth}|p{0.3\linewidth}|}
+        \hline
+        \textbf{Model Level} & \textbf{Description} & \textbf{Semantic Focus} \\
+        \hline
+        Conceptual Data Model (CDM) & Defines the complete semantics of all Entities and Associations. & Concepts and Traits: Entities and Associations are typed with Observables (traits which can be observed but not further characterized). \\
+        \hline
+        Logical Data Model (LDM) & Refines Entities/Associations with Measurements. & Quantification: Further characterizes Observables by adding frames of reference, units, and value types (e.g., Integer, Real). \\
+        \hline
+        Platform Data Model (PDM) & Refines elements with Platform Data Types. & Implementation: Additional characterization of logical measurements to include bit-level precision and language bindings in terms of IDL. \\
+        \hline
+    \end{tabular}
+    \caption{UDDL Multi-level Modeling Approach.}
+    \label{tab:uddl_levels}
+\end{table}
+
+This paper will focus primarily on the Conceptual Data Model (CDM), as the meaning of the data (i.e., the semantics) are completely described by conceptual elements and their relationships.  We will draw upon lower-level LDM and PDM concepts to justify design decisions to ensure the mappings are compatible with lower-level refinements.
+
+\subsubsection{Query Construction}
+
+TODO
+
+\subsection{Semantic Web Technologies} \label{section:introduction-swts-overview}
+
+TODO
+
+\subsubsection{RDF}
+
+\subsubsection{OWL}
+
+Used for Meaning and Inference (resolving synonyms, inferring paths).
+
+\subsubsection{SPARQL}
+
+\subsubsection{SHACL}
+
+is used for Structure Validation (enforcing the strict cardinality rules of UDDL)
+
+
+\section{Theory}
+
+In this section we present mappings between UDDL and SWTs along with supporting justifications.  In general, we will rely on RDF and OWL for core UDDL element and relationship mappings.  For UDDL Queries and Views we will leverage additional SWTs including SPARQL and SHACL.
+
+\subsection{Closed-World and Open-World Assumptions}
+
+UDDL is used to construct a domain-specific data model, functioning as a descriptive language for all the data flowing through a system.  Any concept not able to be captured using this data model definitionally cannot be understood by any interfaced component in the system if the interfaces are fully characterized using a common data model.  We therefore must have a closed-world assumption (CWA) when using UDDL, i.e., the absence of knowledge implies falsity, or more simply, that something not specified is assumed not to exist.  If some modeled object \texttt{Car} does not have a property \texttt{Wings}, then a \texttt{Car} categorically cannot have wings in any given system.  Even if a car with wings did interact with the system, the system must act as if it did as no interface is able to specially consider cars of this type.
+
+In Semantic Web Technologies, we make an open-world assumption (OWA), i.e., the absence of knowledge does not imply falsity.  This is central to the idea of the semantic web, as we must assume we can find information elsewhere.  If an ontology does not state that a \texttt{Car} cannot have \texttt{Wings}, an inference engine must assume a car could potentially have wings.
+
+Because of the CWA in UDDL and OWA in SWTs, in order to represent UDDL concepts using SWTs we must add ``Closure Axioms'' (restrictions) to simulate the structural rigor of UDDL within the open world.  This will also complicate our mapping from SWTs to UDDL and forces us to admit that not all ontological structures are mappable back to UDDL.
+
+\subsection{Containers}
+
+The conceptual:DataModel UDDL element acts as a wrapper for sub-models.  In OWL, this is best captured as a ``Root'' ontology that simply imports the constituent CDM, LDM, and PDM ontologies to provide a unified view.
+
+The CDM defines entities and observables independent of any specific protocol or storage representation.  This can be captured as a Domain Ontology that defines the Classes and Properties (concepts and relationships) of the universe of discourse.
+
+The LDM refines the CDM by adding ``terms of Measurement Systems \ldots and Units''.  This maps to an ontology that imports the Domain Ontology (CDM) and specializes it with measurement constraints (e.g., using QUDT or OM units) and precision rules (using SHACL shapes for constraints).
+
+The PDM defines ``specific representation details such as data type and precision'' (e.g., float vs. double).  This maps to an implementation-specific ontology that binds logical concepts to XSD datatypes.  No specific serialization schema is required at this level.
+
+\subsection{Generalization}
+
+\textbf{UDDL Generalization} $\rightarrow$ \texttt{rdfs:subClassOf} represents inclusion logic (an instance of the subclass is necessarily an instance of the superclass).
+
+In Data Modeling and Logic, Generalization implies Set Inclusion.
+If \texttt{Jet} generalizes to \texttt{Aircraft}, every instance of \texttt{Jet} is an instance of \texttt{Aircraft}.
+
+This maps directly to \texttt{rdfs:subClassOf}.  Since OWL is purely structural and logical (data, not methods), \texttt{rdfs:subClassOf} does not imply polymorphism.
+
+\textbf{Mapping:}
+\[ \text{UDDL:Generalization}(Child, Parent) \rightarrow Child \sqsubseteq Parent \]
+
+
+\subsection{Realization}
+
+In OWL, this refinement relationship can be modeled using \texttt{rdfs:subClassOf}.  This as a side-effect enables ``semantic polymorphism'': for example, by making a logical:Measurement a subclass of a conceptual:Observable, any data tagged with a specific measurement (e.g., ``50 Degrees Celsius'') is automatically inferred to be an instance of the concept ``Temperature''.  An application querying for ``Temperature'' will retrieve any temperature-related data regardless of whether it was recorded in Celsius, Fahrenheit, or Kelvin, provided the ontology links them correctly.    
+
+To differentiate from Generalization-generated sub-classing, it is necessary to compare parent ontologies.  If the element declaring a sub-class has a parent ontology that is generated from a CDM, then there is no Realization possible and this must be a Generalization relationship.  However, for elements in LDM-generated ontologies, if the sub-class is contained in a CDM, then it is a Realization.  Similarly for elements in PDM-generated ontologies, if the sub-class is contained in an LDM, then it is a Realization.
+
+
+\subsection{Multiplicities}
+UDDL conceptual models define lower and upper bounds on characteristics~\cite{OpenGroup2023UDDL}.
+\begin{itemize}
+    \item \texttt{lowerBound}: Minimum occurrences.
+    \item \texttt{upperBound}: Maximum occurrences (-1 indicates unbounded).
+\end{itemize}
+
+\textbf{OWL Mapping:}
+OWL Restrictions (\texttt{owl:Restriction}) handle this natively.
+\begin{itemize}
+    \item \texttt{lowerBound} $\rightarrow$ \texttt{owl:minCardinality} (or \texttt{owl:minQualifiedCardinality}).
+    \item \texttt{upperBound} $\rightarrow$ \texttt{owl:maxCardinality} (or \texttt{owl:maxQualifiedCardinality}).
+\end{itemize}
+
+TODO: participant source and target bounds are not considered at all
+
+\textbf{Note on Unbounded (-1)}: If the upper bound is -1 (infinite), we simply omit the maxCardinality restriction in OWL, as the Open World Assumption permits infinite cardinality by default.
+
+
+\subsection{Conceptual Mappings}
+
+\subsubsection{Entity}
+
+\textbf{UDDL Entity} $\rightarrow$ \texttt{owl:Class}: Both represent a category of things sharing common features.
+
+\subsubsection{Characteristic}
+
+\textbf{UDDL Characteristic} $\rightarrow$ \texttt{OWL Property}: Both represent relationships or attributes.
+
+\subsubsection{Association}
+
+\textbf{UDDL Association} $\rightarrow$ \textbf{Reified Class}: Because UDDL Associations are concepts in their own right~\cite{OpenGroup2023UDDL}, they cannot map merely to OWL properties; they must be Classes.
+
+UDDL defines an Association as a concept created by a collection of participants~\cite{OpenGroup2023UDDL}. Associations can associate entities as well as observables, and critically, associations can have their own characteristics. Standard OWL properties are binary (Subject $\rightarrow$ Predicate $\rightarrow$ Object). They cannot natively possess their own properties (e.g., you cannot add a ``startDate'' to a standard \texttt{ex:owns} property).
+
+To support UDDL Associations, we must use Reification (or the N-ary Relation Pattern). The Association becomes a Class, and its ``Participants'' become properties linking the Association instance to the participating Entities.
+
+UDDL Source: ``The general understanding of an Association is that the collection of participants creates a new concept -- the Association''~\cite{OpenGroup2023UDDL}.
+
+\textbf{Mapping Logic:}
+\begin{itemize}
+    \item \textbf{Association Class}: The UDDL Association $A$ becomes \texttt{owl:Class} $A$.
+    \item \textbf{Role Properties}: Each participant in the association has a rolename. We generate an \texttt{owl:ObjectProperty} for each role.
+    \item \textbf{Domain}: The Domain of these role properties is the Association Class $A$.
+    \item \textbf{Range}: The Range is the type of the Participant (the Entity or Observable).
+\end{itemize}
+
+\textbf{Example: ``Ownership'' Association}
+UDDL: Association Ownership. Participants: owner (Type: Person), asset (Type: Car). Characteristic: purchaseDate.
+
+\textbf{OWL:}
+\begin{verbatim}
+# The Association is a Class
+ex:Ownership a owl:Class.
+
+# Participant 1
+ex:hasOwner a owl:ObjectProperty ;
+    rdfs:domain ex:Ownership ;
+    rdfs:range ex:Person.
+
+# Participant 2
+ex:hasAsset a owl:ObjectProperty ;
+    rdfs:domain ex:Ownership ;
+    rdfs:range ex:Car.
+
+# Characteristic of the Association
+ex:purchaseDate a owl:DatatypeProperty ;
+    rdfs:domain ex:Ownership ;
+    rdfs:range xsd:date.
+\end{verbatim}
+
+
+Participant paths and nodes are two of the most sophisticated features of UDDL.  A participant in an association need not be a direct neighbor; it can be defined by a path through the object graph.
+
+UDDL Specification: ``The `path' attribute of the Participant describes the chain of entity characteristics to traverse to reach the subject of the association beginning with the entity referenced by the `type' attribute''~\cite{OpenGroup2023UDDL}.
+
+In OWL 2, this concept is directly supported by Property Chain Axioms (\texttt{owl:propertyChainAxiom}). This allows a property to be defined as the composition of several other properties.
+
+\textbf{Scenario:}
+Imagine an Association \texttt{FleetManagement}. One participant is \texttt{EngineManufacturer}.
+However, the \texttt{Fleet} is composed of \texttt{Aircraft}. \texttt{Aircraft} has \texttt{Engine}. \texttt{Engine} has \texttt{Manufacturer}.
+The path is: \texttt{Fleet} $\rightarrow$ \texttt{Aircraft} $\rightarrow$ \texttt{Engine} $\rightarrow$ \texttt{Manufacturer}.
+
+\textbf{UDDL Model:}
+\begin{itemize}
+    \item Entity: Fleet
+    \item Entity: Manufacturer
+    \item Association: FleetSource
+    \item Participant: supplier (Type: Manufacturer, Path: aircraft.engine.manufacturer)
+\end{itemize}
+
+\textbf{OWL Mapping:}
+We define the role property \texttt{hasSupplier} using a property chain.
+
+\begin{verbatim}
+ex:hasSupplier a owl:ObjectProperty ;
+    owl:propertyChainAxiom ( ex:hasAircraft ex:hasEngine ex:hasManufacturer ).
+\end{verbatim}
+
+\textbf{Implication:} If an inference engine sees a Fleet instance connected to an Aircraft, which is connected to an Engine, which is connected to a Manufacturer, it will infer the \texttt{hasSupplier} link between the Fleet and the Manufacturer automatically. This perfectly captures the semantic intent of the UDDL Participant Path.
+
+\subsubsection{Domain}
+
+In UDDL, a Domain acts as a namespace or package containing Basis Entities. ``A Domain represents a space defined by a set of BasisEntities relating to well understood concepts by practitioners''~\cite{OpenGroup2023UDDL}.
+
+\begin{itemize}
+    \item \textbf{Mapping Domains}: A UDDL Domain maps to an OWL Ontology (identified by an IRI) or a distinct Namespace.
+    \item \textbf{Mapping Domain Entities}: These are simply the Basis Entities defined within that namespace.
+\end{itemize}
+
+\subsubsection{Domain Entity}
+
+The UDDL specification distinguishes between Basis Entities and Conceptual Entities.
+\begin{itemize}
+    \item \textbf{Basis Entity}: ``Represents a unique domain concept and establishes a foundation from which conceptual Entities may be specialized... Basis Entities are axiomatic''~\cite{OpenGroup2023UDDL}.
+    \item \textbf{Entity}: ``Represents a domain concept in terms of its Observables and other composed conceptual Entities''~\cite{OpenGroup2023UDDL}.
+\end{itemize}
+
+\textbf{OWL Representation}
+In OWL, the distinction between a ``Basis'' entity and a standard ``Entity'' is primarily one of taxonomy, not metamodel. Both function as Classes. A Basis Entity acts as a root class in the domain ontology TBox (Terminological Box), while specialized Entities form the hierarchy below it.
+
+\textbf{Mapping Rule:}
+\begin{itemize}
+    \item \texttt{conceptual:BasisEntity} $\rightarrow$ \texttt{owl:Class} (Root).
+    \item \texttt{conceptual:Entity} $\rightarrow$ \texttt{owl:Class}.
+\end{itemize}
+
+\textbf{Relationship}: Specialized entities utilize \texttt{rdfs:subClassOf} to link to Basis Entities.
+
+\textbf{Example}: If Aircraft is a Basis Entity and Helicopter is an Entity:
+
+\begin{verbatim}
+ex:Aircraft a owl:Class.
+ex:Helicopter a owl:Class ;
+    rdfs:subClassOf ex:Aircraft.
+\end{verbatim}
+
+\subsection{Logical Mappings}
+
+\subsubsection{Measurements and Units}
+In LDM, a Measurement realizes an Observable. It binds the abstract concept to a Unit and a Value Type.
+
+\textbf{SWT Representation:}
+We can leverage the QUDT (Quantities, Units, Dimensions, and Types) ontology, which is the standard for this in the Semantic Web.
+\begin{itemize}
+    \item UDDL Measurement $\rightarrow$ \texttt{qudt:QuantityValue}.
+    \item UDDL Unit $\rightarrow$ \texttt{qudt:Unit}.
+    \item UDDL Value $\rightarrow$ \texttt{qudt:numericValue}.
+\end{itemize}
+
+\textbf{Example:}
+UDDL: Measurement \texttt{AltitudeMeters}. Realizes \texttt{Altitude}. Unit \texttt{Meter}.
+
+\textbf{OWL (via QUDT):}
+\begin{verbatim}
+ex:AltitudeMeters a owl:Class ;
+    rdfs:subClassOf ex:Altitude ;  # The realization link
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty qudt:unit ;
+        owl:hasValue unit:Meter
+    ].
+\end{verbatim}
+
+\subsubsection{Constraints and Facets}
+UDDL LDM allows constraints like \texttt{IntegerRangeConstraint} or \texttt{RegularExpressionConstraint}~\cite{OpenGroup2023UDDL}.
+
+\textbf{Mapping:} These map to OWL Datatype Restrictions (also known as Facets in XML Schema).
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{UDDL Constraint} & \textbf{OWL / XSD Construct} & \textbf{Example Syntax} \\ \hline
+IntegerRangeConstraint & \texttt{xsd:minInclusive}, \texttt{xsd:maxInclusive} & \texttt{[ xsd:minInclusive 0 ]} \\ \hline
+RegularExpressionConstraint & \texttt{xsd:pattern} & \texttt{[ xsd:pattern "\^{}[A-Z]\{3\}\$" ]} \\ \hline
+FixedLengthStringConstraint & \texttt{xsd:length} & \texttt{[ xsd:length 10 ]} \\ \hline
+RealRangeConstraint & \texttt{xsd:minExclusive}, \texttt{xsd:maxExclusive} & \texttt{[ xsd:maxExclusive 100.0 ]} \\ \hline
+\end{tabular}
+\caption{Constraint Mappings}
+\label{tab:constraints}
+\end{table}
+
+\subsubsection{Coordinate Systems}
+The LDM definition of \texttt{CoordinateSystem} involves axes and mathematical relationships. In OWL, this is typically modeled as a structural graph.
+\begin{itemize}
+    \item \texttt{CoordinateSystem} becomes a Class.
+    \item \texttt{axis} becomes an Object Property linking the system to \texttt{CoordinateSystemAxis} instances.
+\end{itemize}
+This structural mapping ensures that when data is exchanged, the reference frame metadata travels with the measurement.
+
+
+\subsection{Queries and Views}
+
+UDDL includes a specific Query Grammar (Chapter 6 of the Standard~\cite{OpenGroup2023UDDL}). A UDDL Query is ``simply understood as a path through Entity/Relation diagram... Composite Queries are collections of these paths.''
+
+The UDDL query language is primarily a Selection and Projection language. It traverses the graph and selects characteristics. This maps isomorphically to SPARQL, the standard query language for RDF.
+
+\subsubsection{Select and Projection}
+
+\begin{itemize}
+    \item \textbf{UDDL}: \texttt{SELECT rolename, characteristic}
+    \item \textbf{SPARQL}: \texttt{SELECT ?rolename ?characteristic}
+\end{itemize}
+
+\textbf{Path Traversal (The ``FROM'' Clause)}
+
+UDDL defines queries based on paths through the composition/participant hierarchy.
+\begin{itemize}
+    \item \textbf{UDDL}: \texttt{Entity.characteristic.subCharacteristic}
+    \item \textbf{SPARQL}: Property Paths (\texttt{/}). \texttt{?entity ex:hasCharacteristic/ex:hasSubCharacteristic ?value}.
+\end{itemize}
+
+\subsubsection{Composite Queries (Unions)}
+
+The user highlighted ``Composite Queries (includes Unions).''
+\begin{itemize}
+    \item \textbf{UDDL}: A Composite Query combines multiple queries, optionally as a Union.
+    \item \textbf{SPARQL}: The \texttt{UNION} clause.
+\end{itemize}
+
+\subsubsection{Example Translation:}
+UDDL Intent: Select the ``ID'' from both ``Aircraft'' entities and ``GroundVehicle'' entities (Union).
+
+\textbf{SPARQL:}
+\begin{verbatim}
+SELECT ?id
+WHERE {
+  {
+   ?s a ex:Aircraft ;
+       ex:hasID ?id.
+  }
+  UNION
+  {
+   ?s a ex:GroundVehicle ;
+       ex:hasID ?id.
+  }
+}
+\end{verbatim}
+
+In UDDL, a Query defines a View—a subset of data. In the Semantic Web, the concept of a ``View'' is often handled by SHACL (Shapes Constraint Language)~\cite{W3C_SHACL}.
+A SHACL Shape can define a ``closed'' shape that corresponds to the specific subset of properties selected by a UDDL View. This allows for validation: ensuring that a data packet conforms to the specific View definition required by an interface.
+
+
+\subsubsection{Modeling Perspectives}
+
+The UDDL standard highlights three perspectives: Observation, Entity-Association, and Application~\cite{OpenGroup2023UDDL}.
+\begin{itemize}
+    \item \textbf{Observation Perspective}: Defines the ``Dictionary'' of Observables and Measurements.
+    \item \textbf{Entity-Association Perspective}: Defines the ``Grammar'' of the domain (Concepts).
+    \item \textbf{Application Perspective}: Defines the ``Usage'' (Views/Queries).
+\end{itemize}
+
+\textbf{Insight}: In SWT, this should be implemented via Ontology Imports.
+\begin{itemize}
+    \item \texttt{common-observables.owl}: Contains Observables and Units. (Reusable across domains).
+    \item \texttt{domain-core.owl}: Imports \texttt{common-observables.owl}. Defines Entities and Associations.
+    \item \texttt{app-interface.owl}: Imports \texttt{domain-core.owl}. Defines SHACL shapes (Views) for specific message validation.
+\end{itemize}
+This modularity mirrors the UDDL separation of concerns, preventing monolithic, unmanageable ontologies.
+
+
+
+
+
+
+
+
+
+
+
+% \subsection{The Observable Dilemma: Class vs. Datatype}
+% The user posed a critical question regarding Observables: ``Maybe \texttt{rdfs:Datatype} works better? Not sure. Observables are `traits which can be observed, but not further characterized' and at the conceptual level have no units or types associated with them.''
+
+% To answer this, we must look at the lifecycle of an Observable in UDDL.
+% \begin{enumerate}
+%     \item \textbf{Conceptual}: Observable (e.g., ``Temperature''). Abstract, no unit.
+%     \item \textbf{Logical}: Measurement (e.g., ``CelsiusTemp''). Realizes the Observable. Has a Unit (``DegreeCelsius'') and Value Type (``Real'').
+%     \item \textbf{Platform}: PlatformDataType (e.g., ``float'').
+% \end{enumerate}
+
+% \subsubsection{Analysis of rdfs:Datatype}
+% If we map a Conceptual Observable (e.g., ``Temperature'') to \texttt{rdfs:Datatype} or \texttt{owl:DatatypeProperty}, we assert that it relates an Entity to a Literal (a raw value like ``25.0'').
+% \begin{itemize}
+%     \item \textbf{Pros}: Simple. Matches the idea that an observable is a ``trait.''
+%     \item \textbf{Cons}: It creates a ``Semantic Dead End.'' In the Logical model, ``Temperature'' becomes a complex structure with a Unit and a Reference Frame. You cannot easily refine a Datatype Property (which points to a literal) into an Object Property (which points to a complex Measurement object) without breaking the inheritance hierarchy. In OWL, \texttt{DatatypeProperty} and \texttt{ObjectProperty} are disjoint.
+% \end{itemize}
+
+% \subsubsection{Analysis of owl:Class}
+% If we map an Observable to an \texttt{owl:Class} (specifically, a subclass of \texttt{sosa:ObservableProperty} or \texttt{qudt:QuantityKind}):
+% \begin{itemize}
+%     \item \textbf{Pros}: It remains an object. We can define a property \texttt{hasObservable} that links an Entity to this Class. In the Logical model, we simply subclass the Observable Class to create a Measurement Class (e.g., \texttt{CelsiusTemp subClassOf Temperature}). This preserves the ``Realization'' relationship as a natural taxonomic or realization link.
+%     \item \textbf{Cons}: Slightly more verbose.
+% \end{itemize}
+
+% \subsubsection{The Verdict: Observables are Classes}
+% Given UDDL's requirement for refinement into Measurements~\cite{OpenGroup2023UDDL}, Observables must be mapped to \texttt{owl:Class}. They represent the concept of the quality, not the literal value of the quality. This aligns with standard ontologies like BFO (Basic Formal Ontology) which treats ``Quality'' as a Dependent Continuant (an entity), and SSN (Semantic Sensor Network) which treats properties as observable entities.
+
+% \textbf{Mapping Rule:}
+% \[ \text{UDDL:Observable}(O) \rightarrow \text{OWL:Class}(O) \]
+
+% \textbf{Example:}
+% \begin{verbatim}
+% # The Concept of Temperature
+% ex:Temperature a owl:Class.
+
+% # The Entity having the trait
+% ex:Engine a owl:Class ;
+%     rdfs:subClassOf [
+%         a owl:Restriction ;
+%         owl:onProperty ex:hasTemperature ;
+%         owl:someValuesFrom ex:Temperature
+%     ].
+% \end{verbatim}
+
+
+\section{Discussion}
+
+Can we add constraints on constructions of ontologies that force conformance with UDDL data models?
+
+
+% \section{Conclusion}
+% The analysis confirms that the Universal Domain Description Language (UDDL) is highly compatible with Semantic Web Technologies, specifically OWL 2 DL. While there is no single ``magic button'' to convert MOF-based UDDL to DL-based OWL, a robust mapping exists by applying standard ontological patterns:
+% \begin{itemize}
+%     \item Entities and Basis Entities map naturally to OWL Classes.
+%     \item Observables must be mapped to OWL Classes (Qualities) to allow for future refinement, avoiding the trap of rigid Datatype properties.
+%     \item Associations require Reification (modeling relationships as Classes) to support N-ary participants and characteristics.
+%     \item Participant Paths find a powerful equivalent in OWL Property Chains, enabling deep graph traversal inference.
+%     \item Queries map isomorphically to SPARQL, and Views align with SHACL Shapes.
+% \end{itemize}
+% By adopting these mappings, systems engineers can document their domains in UDDL to satisfy rigorous documentation requirements~\cite{OpenGroup2023UDDL}, and then project these models into OWL to gain the immense benefits of the Semantic Web: machine reasoning, global interoperability, and automated data integration. The result is a unified approach that eliminates ambiguity not just for humans reading the spec, but for the machines executing it.
+
+% Bibliography
+\printbibliography
+
+\end{document}
