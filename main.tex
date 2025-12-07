@@ -406,75 +406,32 @@ The UDDL standard highlights three perspectives: Observation, Entity-Association
 This modularity mirrors the UDDL separation of concerns, preventing monolithic, unmanageable ontologies.
 
 
+\section{Methods}
 
+Convert Air System DSDM to an ontology using the proposed mappings.
 
+Expressivity Profiling: Determine the Description Logic (DL) complexity class (e.g., $\mathcal{ALC}$, $\mathcal{SHOIN}$, $\mathcal{SROIQ}$).  This tells you the worst-case computational complexity for reasoning.  If you accidentally used a feature that bumps you from Polynomial time to N-Exponential time (like unrestricted negation or inverse roles in complex chains), your reasoner will hang.
 
+Consistency and Satisfiability Check: Use a reasoner (like HermiT or Pellet) to check for logical contradictions.  This reveals hidden contradictions. For example, if Class A is disjoint with Class B, but an instance belongs to both, the ontology is inconsistent.
 
+Entailment Ratio: Count the explicit axioms vs. inferred axioms after running a reasoner.  This gives a measure of ``Hidden knowledge.'' If the inferred count is high, your ontology is powerful, i.e., it is generating new data for free.  If it is zero, you might not be utilizing OWL features effectively.
 
+\section{Results}
 
+TODO
 
+\section{Analysis}
 
-
-% \subsection{The Observable Dilemma: Class vs. Datatype}
-% The user posed a critical question regarding Observables: ``Maybe \texttt{rdfs:Datatype} works better? Not sure. Observables are `traits which can be observed, but not further characterized' and at the conceptual level have no units or types associated with them.''
-
-% To answer this, we must look at the lifecycle of an Observable in UDDL.
-% \begin{enumerate}
-%     \item \textbf{Conceptual}: Observable (e.g., ``Temperature''). Abstract, no unit.
-%     \item \textbf{Logical}: Measurement (e.g., ``CelsiusTemp''). Realizes the Observable. Has a Unit (``DegreeCelsius'') and Value Type (``Real'').
-%     \item \textbf{Platform}: PlatformDataType (e.g., ``float'').
-% \end{enumerate}
-
-% \subsubsection{Analysis of rdfs:Datatype}
-% If we map a Conceptual Observable (e.g., ``Temperature'') to \texttt{rdfs:Datatype} or \texttt{owl:DatatypeProperty}, we assert that it relates an Entity to a Literal (a raw value like ``25.0'').
-% \begin{itemize}
-%     \item \textbf{Pros}: Simple. Matches the idea that an observable is a ``trait.''
-%     \item \textbf{Cons}: It creates a ``Semantic Dead End.'' In the Logical model, ``Temperature'' becomes a complex structure with a Unit and a Reference Frame. You cannot easily refine a Datatype Property (which points to a literal) into an Object Property (which points to a complex Measurement object) without breaking the inheritance hierarchy. In OWL, \texttt{DatatypeProperty} and \texttt{ObjectProperty} are disjoint.
-% \end{itemize}
-
-% \subsubsection{Analysis of owl:Class}
-% If we map an Observable to an \texttt{owl:Class} (specifically, a subclass of \texttt{sosa:ObservableProperty} or \texttt{qudt:QuantityKind}):
-% \begin{itemize}
-%     \item \textbf{Pros}: It remains an object. We can define a property \texttt{hasObservable} that links an Entity to this Class. In the Logical model, we simply subclass the Observable Class to create a Measurement Class (e.g., \texttt{CelsiusTemp subClassOf Temperature}). This preserves the ``Realization'' relationship as a natural taxonomic or realization link.
-%     \item \textbf{Cons}: Slightly more verbose.
-% \end{itemize}
-
-% \subsubsection{The Verdict: Observables are Classes}
-% Given UDDL's requirement for refinement into Measurements~\cite{OpenGroup2023UDDL}, Observables must be mapped to \texttt{owl:Class}. They represent the concept of the quality, not the literal value of the quality. This aligns with standard ontologies like BFO (Basic Formal Ontology) which treats ``Quality'' as a Dependent Continuant (an entity), and SSN (Semantic Sensor Network) which treats properties as observable entities.
-
-% \textbf{Mapping Rule:}
-% \[ \text{UDDL:Observable}(O) \rightarrow \text{OWL:Class}(O) \]
-
-% \textbf{Example:}
-% \begin{verbatim}
-% # The Concept of Temperature
-% ex:Temperature a owl:Class.
-
-% # The Entity having the trait
-% ex:Engine a owl:Class ;
-%     rdfs:subClassOf [
-%         a owl:Restriction ;
-%         owl:onProperty ex:hasTemperature ;
-%         owl:someValuesFrom ex:Temperature
-%     ].
-% \end{verbatim}
-
+TODO
 
 \section{Discussion}
 
 Can we add constraints on constructions of ontologies that force conformance with UDDL data models?
 
 
-% \section{Conclusion}
-% The analysis confirms that the Universal Domain Description Language (UDDL) is highly compatible with Semantic Web Technologies, specifically OWL 2 DL. While there is no single ``magic button'' to convert MOF-based UDDL to DL-based OWL, a robust mapping exists by applying standard ontological patterns:
-% \begin{itemize}
-%     \item Entities and Basis Entities map naturally to OWL Classes.
-%     \item Observables must be mapped to OWL Classes (Qualities) to allow for future refinement, avoiding the trap of rigid Datatype properties.
-%     \item Associations require Reification (modeling relationships as Classes) to support N-ary participants and characteristics.
-%     \item Participant Paths find a powerful equivalent in OWL Property Chains, enabling deep graph traversal inference.
-%     \item Queries map isomorphically to SPARQL, and Views align with SHACL Shapes.
-% \end{itemize}
-% By adopting these mappings, systems engineers can document their domains in UDDL to satisfy rigorous documentation requirements~\cite{OpenGroup2023UDDL}, and then project these models into OWL to gain the immense benefits of the Semantic Web: machine reasoning, global interoperability, and automated data integration. The result is a unified approach that eliminates ambiguity not just for humans reading the spec, but for the machines executing it.
+\section{Conclusion}
+
+TODO
 
 % Bibliography
 \printbibliography
