@@ -39,20 +39,20 @@
 \maketitle
 
 \begin{abstract}
-The engineering of complex, software-intensive systems faces a pervasive challenge: data ambiguity.  As disparate systems ranging from avionics to industrial IoT (Internet of Things) attempt to exchange information, the semantic context of that data is often not communicated clearly and effectively, leading to additional unplanned integration effort and interoperability gaps.  The Universal Domain Description Language (UDDL) addresses this by providing a platform-independent data modeling language rooted in the separation of concerns between Conceptual, Logical, and Platform data models~\cite{OpenGroup2023UDDL}.  However, UDDL constructs are not well-studied in systems and interoperability literature while the Web Ontology Language (OWL) \cite{W3C_OWL2} and the Resource Description Framework (RDF) \cite{W3C_RDF11} (the de facto standard for semantic knowledge representation on the web) are actively researched and have rich tooling ecosystems.  We recognize UDDL use-cases as specializations of Sematic Web Technologies (SWTs) use-cases and that by bridging technology concepts both communities stand to gain insights in creating and utilizing data semantics. 
+The engineering of complex, software-intensive systems faces a pervasive challenge: data ambiguity~\cite{INCOSE2035, madni2014system}.  As disparate systems ranging from avionics to industrial IoT (Internet of Things) attempt to exchange information, the semantic context of that data is often not communicated clearly and effectively, leading to additional unplanned integration effort and interoperability gaps~\cite{noura2019interoperability, mzili2025interoperability, fusco2020approach}.  The Universal Domain Description Language (UDDL) addresses this by providing a platform-independent data modeling language rooted in the separation of concerns between Conceptual, Logical, and Platform data models~\cite{OpenGroup2023UDDL}.  However, UDDL constructs are not well-studied in systems and interoperability literature while the Web Ontology Language (OWL) \cite{W3C_OWL2} and the Resource Description Framework (RDF) \cite{W3C_RDF11} (the de facto standard for semantic knowledge representation on the web) are actively researched and have rich tooling ecosystems.  We recognize UDDL use-cases as specializations of Sematic Web Technologies (SWTs) use-cases and that by bridging technology concepts both communities stand to gain insights in creating and utilizing data semantics. 
 
 In this paper we propose a mapping between UDDL and Semantic Web Technologies (SWT), specifically addressing the feasibility of mapping UDDL Conceptual model elements to SWTs.  While UDDL conceptual Entities and Generalizations map cleanly to OWL Classes and Subclasses, constructs such as ``Observables'', ``Associations'', and ``Participant Paths'' require Reification and Property Chains to preserve semantic fidelity.  We provide a mapping of UDDL's Query language and View structures to SPARQL \cite{W3C_SPARQL11} Property Paths and SHACL \cite{W3C_SHACL} constraints.  These mappings provide a blueprint for a UDDL to SWTs bridge that retains necessary semantic rigor while leveraging the inferential power of the Semantic Web ecosystem.
 \end{abstract}
 
 \section{Introduction} \label{section:introduction}
 
-In systems engineering, rigorous definition of data and interfaces is not merely a documentation exercise.  It is a fundamental requirement for the composition, maintenance, and future reuse of complex systems.  In traditional systems engineering, data dictionaries and interface control documents (ICDs) have served as the primary means of semantic capture.  (TODO: cite some things here).  However, these artifacts are often static in nature and reliant on human interpretation.  As noted in the UDDL Technical Specification, ``Adequately describing domain data is a common problem in computer-based systems. Typical approaches involve creating documentation to accompany artifacts \ldots in an attempt to capture the semantics of the data exchanged''~\cite{OpenGroup2023UDDL}.
+In systems engineering, rigorous definition of data and interfaces is not merely a documentation exercise, but a fundamental requirement for the composition, maintenance, and future reuse of complex systems~\cite{fusco2020approach, madni2014system, Friedenthal2014, INCOSE2035}.  In traditional systems engineering, data dictionaries and interface control documents (ICDs) have served as the primary means of semantic capture~\cite{Friedenthal2014, price2013semantic}.  However, these artifacts are often static in nature and reliant on human interpretation~\cite{Friedenthal2014}.  As noted in the UDDL Technical Specification, ``Adequately describing domain data is a common problem in computer-based systems. Typical approaches involve creating documentation to accompany artifacts \ldots in an attempt to capture the semantics of the data exchanged''~\cite{OpenGroup2023UDDL}.
 
-The failure of the traditional, document-based approaches to document data semantics stems from their inability to formally and precisely bind meaning to structure.  A variable labeled \texttt{alt} in a ICD may imply ``altitude'', but it may fail to specify a reference frame (e.g., ellipsoidal vs. geoidal), the unit of measure (meters vs. feet), or the conceptual domain (air operations vs. ground).  UDDL was specifically developed to fill this documentation gap, its objective being to ``formally document the meaning of data with the goal of eliminating ambiguity''~\cite{OpenGroup2023UDDL}.  It achieves this by enforcing a strict separation of concerns, distinguishing the identity of data from its context, and providing building blocks to construct formal definitions of the meaning of data flowing through interfaces.
+The failure of the traditional, document-based approaches to document data semantics stems from their inability to formally and precisely bind meaning to structure~\cite{price2013semantic, Friedenthal2014}.  For example, a variable labeled \texttt{alt} in a ICD may imply ``altitude'', but it may fail to specify a reference frame (e.g., ellipsoidal vs. geoidal), the unit of measure (meters vs. feet), or the conceptual domain (air operations vs. ground).  UDDL was specifically developed to fill this documentation gap, its objective being to ``formally document the meaning of data with the goal of eliminating ambiguity''~\cite{OpenGroup2023UDDL}.  It achieves this by enforcing a strict separation of concerns, distinguishing the identity of data from its context, and providing building blocks to construct formal definitions of the meaning of data flowing through interfaces.
 
-Parallel to the development of UDDL in the systems engineering space, the Semantic Web has evolved a robust stack of technologies designed for machine-readability and logical inference.  At the core of this stack are RDF (Resource Description Framework) and OWL (Web Ontology Language).  RDF provides a graph-based data model where knowledge is atomized into triples (Subject, Predicate, Object), offering high flexibility and linkability~\cite{W3C_RDF11}.  OWL extends RDF with formal logical semantics (Description Logics), enabling systems to define complex relationships, cardinality constraints, and classifications~\cite{W3C_OWL2}.
+Parallel to the development of UDDL in the systems engineering space, the Semantic Web has evolved a robust stack of technologies designed for machine-readability and logical inference~\cite{berners2023semantic}.  At the core of this stack are RDF (Resource Description Framework) and OWL (Web Ontology Language).  RDF provides a graph-based data model where knowledge is atomized into triples (Subject, Predicate, Object), offering high flexibility and linkability~\cite{W3C_RDF11}.  OWL extends RDF with formal logical semantics (Description Logics), enabling systems to define complex relationships, cardinality constraints, and classifications~\cite{W3C_OWL2}.
 
-To our knowledge, there is no existing literature showing interoperability, traceability, or mappings between UDDL data models and any Semantic Web Technologies and this paper serves as an initial attempt at formally bridging the technologies and approaches of two disparate communities of research and industry.
+Despite development and growing industry use of UDDL and its predecessor data modeling languages since 2013~\cite{OpenGroup2013FACE}, to our knowledge, there is no existing literature showing interoperability, traceability, or mappings between UDDL data models and any Semantic Web Technologies and this paper serves as an initial attempt at formally bridging the technologies and approaches of two disparate communities of research and industry.
 
 The remainder of the Introduction will provide brief overviews of UDDL  and Semantic Web Technologies to serve as context for the mappings described in the Theory section.  Section \ref{section:introduction-uddl-overview} introduces the UDDL meta-model and grammar that specify its data modeling language.  Section \ref{section:introduction-swts-overview} describes the SWTs that will be useful in mapping UDDL concepts.
 
@@ -68,43 +68,52 @@ The UDDL technical standard utilizes a multi-level modeling approach summarized 
         \hline
         \textbf{Model Level} & \textbf{Description} & \textbf{Semantic Focus} \\
         \hline
-        Conceptual Data Model (CDM) & Defines the complete semantics of all Entities and Associations. & Concepts and Traits: Entities and Associations are typed with Observables (traits which can be observed but not further characterized). \\
+        Conceptual Data Model (CDM) & Defines the complete semantics of all Entities and Associations. & Concepts and relationships.  Entities and Associations are typed with Observables (traits which can be observed but not further characterized). \\
         \hline
-        Logical Data Model (LDM) & Refines Entities/Associations with Measurements. & Quantification: Further characterizes Observables by adding frames of reference, units, and value types (e.g., Integer, Real). \\
+        Logical Data Model (LDM) & Refines Entities/Associations with Measurements. & Quantification.  Further characterizes Observables by adding frames of reference, units, and value types (e.g., Integer, Real). \\
         \hline
-        Platform Data Model (PDM) & Refines elements with Platform Data Types. & Implementation: Additional characterization of logical measurements to include bit-level precision and language bindings in terms of IDL. \\
+        Platform Data Model (PDM) & Refines elements with Platform Data Types. & Implementation.  Additional characterization of logical measurements to include bit-level precision and language bindings in terms of IDL. \\
         \hline
     \end{tabular}
     \caption{UDDL Multi-level Modeling Approach.}
     \label{tab:uddl_levels}
 \end{table}
 
-This paper will focus primarily on the Conceptual Data Model (CDM), as the meaning of the data (i.e., the semantics) are completely described by conceptual elements and their relationships.  We will draw upon lower-level LDM and PDM concepts to justify design decisions to ensure the mappings are compatible with lower-level refinements.
+This paper will focus primarily on the Conceptual Data Model (CDM), as the meaning of the data (i.e., the semantics) are completely described by conceptual elements and their relationships.  We will draw upon lower-level LDM and PDM concepts to justify design decisions to ensure the mappings are compatible with lower-level refinements.  Therefore, we will review only the conceptual meta-model elements and their relationships.
+
+TODO: review conceptual meta-model elements and their relationships.
 
 \subsubsection{Query Construction}
 
-TODO
+The UDDL Query grammar and associated construction rules defines a SQL-like language for specification of data semantics.  Query specifications can be constructed at all three levels of the UDDL meta-model.  The only differences in expression of query specifications at the various levels are the meta-types of Entities and Associations (CDM, LDM, PDM; CDM used for conceptual query specifications, LDM for logical query specifications, etc.) and qualifiers that may be used (e.g., in a \texttt{WHERE} clause).  \texttt{WHERE} clauses and other qualifiers specify data filtering criteria and side-effects on generated syntax when combined with any given Template specification but do not contribute to the semantics of the query.  We therefore need not consider mapping of \texttt{WHERE} clauses and other qualifiers, including sub-query specifications.  Entities and Associations will map cleanly across realizations between levels of the UDDL meta-model up to down-selection.  Considering this along with the fact that Generalization relationships must also be realized across refinement levels (up to down-selection), we will without loss of generality consider only conceptual query specifications and \texttt{SELECT} and \texttt{JOIN} query language elements.
 
 \subsection{Semantic Web Technologies} \label{section:introduction-swts-overview}
 
-TODO
+The Semantic Web Technology (SWT) stack provides a layered architecture for machine-readable knowledge representation.  Table \ref{tab:swt_overview} summarizes the core technologies relevant to this mapping.
 
-\subsubsection{RDF}
-
-\subsubsection{OWL}
-
-Used for Meaning and Inference (resolving synonyms, inferring paths).
-
-\subsubsection{SPARQL}
-
-\subsubsection{SHACL}
-
-is used for Structure Validation (enforcing the strict cardinality rules of UDDL)
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|p{0.15\linewidth}|p{0.75\linewidth}|}
+        \hline
+        \textbf{Technology} & \textbf{Description} \\
+        \hline
+        RDF & The Resource Description Framework provides a graph-based data model where knowledge is represented as triples (Subject, Predicate, Object), serving as the foundation for data interchange. \\
+        \hline
+        OWL & The Web Ontology Language extends RDF with formal Description Logic semantics, enabling the definition of complex class hierarchies, restrictions, and inferential rules. \\
+        \hline
+        SPARQL & The standard query language for RDF, allowing for the retrieval and manipulation of data stored in RDF format. \\
+        \hline
+        SHACL & The Shapes Constraint Language provides a mechanism to validate RDF graphs against a set of conditions (shapes), ensuring structural conformance. \\
+        \hline
+    \end{tabular}
+    \caption{Overview of Semantic Web Technologies.}
+    \label{tab:swt_overview}
+\end{table}
 
 
 \section{Theory}
 
-In this section we present mappings between UDDL and SWTs along with supporting justifications.  In general, we will rely on RDF and OWL for core UDDL element and relationship mappings.  For UDDL Queries and Views we will leverage additional SWTs including SPARQL and SHACL.
+In this section we present mappings between UDDL and SWTs along with supporting justifications.  In general, we will rely on RDF and OWL for core UDDL element and relationship mappings.  For UDDL Queries we will leverage additional SWTs including SPARQL and SHACL.
 
 \subsection{Closed-World and Open-World Assumptions}
 
