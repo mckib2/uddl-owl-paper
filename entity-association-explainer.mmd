@@ -1,0 +1,54 @@
+flowchart LR
+    %% --- NODE STYLES (B&W) ---
+    classDef bwBox fill:#ffffff,stroke:#000000,stroke-width:2px,color:#000000;
+
+    %% --- NODES ---
+    AssocNode["**Association**<br>ObservableC"]:::bwBox
+
+    subgraph EntityX_box [**EntityX**]
+        direction TB
+        style EntityX_box fill:#ffffff,stroke:#000000,color:#000000
+        XA[ObservableA]
+        XB[ObservableB]
+    end
+
+    subgraph EntityY_box [**EntityY**]
+        direction TB
+        style EntityY_box fill:#ffffff,stroke:#000000,color:#000000
+        YC[ObservableC]
+        YZ_label[EntityZ]
+    end
+
+    subgraph EntityZ_box [**EntityZ**]
+        direction TB
+        style EntityZ_box fill:#ffffff,stroke:#000000,color:#000000
+        ZD[ObservableD]
+        ZE[ObservableE]
+    end
+
+    %% --- CONNECTIONS ---
+    %% The order here matters for linkStyle indexing!
+    
+    %% Index 0: Participant 1 (Solid)
+    AssocNode --->|participant1| EntityX_box
+
+    %% Index 1: Participant 2 (Dotted)
+    AssocNode --->|participant2| YC
+
+    %% Index 2 & 3: Participant 3 (Dashed - 2 hops)
+    AssocNode --->|participant3| YZ_label
+    YZ_label ---> ZD
+
+    %% --- LINK STYLING ---
+    
+    %% Style 0 (p1): Standard Solid
+    linkStyle 0 stroke-width:2px,fill:none,stroke:black;
+
+    %% Style 1 (p2): Dotted (Small gap)
+    %% 'stroke-dasharray: 3 3' means 3px line, 3px gap
+    linkStyle 1 stroke-width:2px,fill:none,stroke:black,stroke-dasharray: 3 3;
+
+    %% Style 2 & 3 (p3): Long Dashes (Long line, small gap)
+    %% 'stroke-dasharray: 10 5' means 10px line, 5px gap
+    %% We apply this to both legs (2 and 3) so they match visually
+    linkStyle 2,3 stroke-width:2px,fill:none,stroke:black,stroke-dasharray: 10 5;

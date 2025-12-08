@@ -146,6 +146,7 @@ def main():
     parser.add_argument("input_file", help="Input LaTeX file")
     parser.add_argument("output_file", help="Output PDF file")
     parser.add_argument("--build-dir", help="Directory to run build in", default=None)
+    parser.add_argument("--extra-resource", action="append", help="Extra files to make available to latex")
     
     args = parser.parse_args()
 
@@ -167,6 +168,15 @@ def main():
     
     if not os.path.exists(build_dir):
         os.makedirs(build_dir, exist_ok=True)
+
+    if args.extra_resource:
+        for res in args.extra_resource:
+            if os.path.exists(res):
+                 # Copy to build_dir so latex can find it
+                 print(f"Copying resource {res} to {build_dir}")
+                 shutil.copy2(res, build_dir)
+            else:
+                 print(f"Warning: Resource {res} not found")
 
     # Check if LaTeX tools are available
     has_pdflatex = check_command_available('pdflatex')
