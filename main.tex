@@ -55,6 +55,8 @@ Parallel to the development of UDDL, the Semantic Web has evolved a robust stack
 
 Despite development and growing industry use of UDDL and its predecessor data modeling languages since 2013~\cite{OpenGroup2013FACE}, to our knowledge, there is no existing literature showing interoperability, traceability, or mappings between UDDL data models and any Semantic Web Technology.  This paper serves as an initial attempt at formally bridging the technologies and approaches of two disparate communities of research and industry.
 
+The result of this work is that UDDL domain-specific data models can be made to interoperate with semantic web ontologies and vice versa, leading to more efficient integration between systems based on UDDL and semantic web ontologies.  For example, any system developed against the FACE and SOSA technical standards necessarily use UDDL data models for interface specification.  Integration and analysis methods developed in semantic web for ontologies can be directly applied to UDDL data models, e.g., Entity Mapping tasks are currently beyond state-of-the-art for even advanced users of UDDL.  Semantic web technologies may be found to have greater expression than UDDL and could point to either gaps in the UDDL data modeling language or help to refine understandings of the differences between UDDL and ontologies.
+
 The remainder of the Introduction will provide brief overviews of UDDL  and Semantic Web Technologies to serve as context for the mappings described in the Theory section.  Section \ref{section:introduction-uddl-overview} introduces the UDDL meta-model and grammar that specify its data modeling language.  Section \ref{section:introduction-swts-overview} describes the SWTs that will be useful in mapping UDDL concepts.
 
 \subsection{UDDL} \label{section:introduction-uddl-overview}
@@ -135,7 +137,7 @@ Table \ref{tab:cdm_elements} informally summarizes the construction of relevant 
     \end{tabular}
 \end{table}
 
-Table \ref{tab:cdm_relationships} summarizes how relationships between core UDDL Conceptual Meta-Model Elements are constructed.  Composition relationships include an optional multiplicity specifications to indicate the minimum and maximum number of elements that can be composed ($ -1 $ indicates unbounded).  If not specified, the default is one.  Similarly, Participants of Associations include optional source and target multiplicities that are applied when calculating the multiplicities along the Participant Paths.  Participant multiplicities are assumed to be unbounded if not specified.
+Table \ref{tab:cdm_relationships} summarizes how relationships between core UDDL Conceptual Meta-Model Elements are constructed.  Composition relationships include optional multiplicity specifications to indicate the minimum and maximum number of elements that can be composed ($ -1 $ indicates unbounded).  If not specified, the default is one.  Similarly, Participants of Associations include optional source and target multiplicities that are applied when calculating the multiplicities along the Participant Paths.  Participant multiplicities are assumed to be unbounded if not specified.
 
 % generated figure from entity-association-explainer.mmd
 \begin{figure}[H]
@@ -145,7 +147,7 @@ Table \ref{tab:cdm_relationships} summarizes how relationships between core UDDL
     \label{fig:entity-association}
 \end{figure}
 
-Figure \ref{fig:entity-association} provides a summary of some of the feaures of Entity and Associations construction.  Entities \texttt{EntityX}, \texttt{EntityY}, and \texttt{EntityZ} compose Observables and other Entities (grey boxes).  The single \texttt{Association} associates Entities and Observables through three different Participant Paths represented by solid, dotted, and dashed lines.  \texttt{participant1} simply associates the entire \texttt{EntityX}.  \texttt{participant2} specifically associates the \texttt{ObservableC} of \texttt{EntityY}.  \texttt{participant3} associates the \texttt{ObservableD} of \texttt{EntityZ} through the composed \texttt{EntityZ} within \texttt{EntityY}, demonstrating a Participant Path with two nodes.
+Figure \ref{fig:entity-association} provides a summary of some of the feaures of Entity and Associations construction.  Entities \texttt{EntityX}, \texttt{EntityY}, and \texttt{EntityZ} compose Observables and other Entities (grey boxes).  The single \texttt{Association} associates Entities and Observables through three different Participant Paths represented by solid, dotted, and dashed lines.  \texttt{participant1} simply associates the entire \texttt{EntityX}.  \texttt{participant2} specifically associates the \texttt{ObservableC} of \texttt{EntityY}.  \texttt{participant3} associates the \texttt{ObservableD} of \texttt{EntityZ} through the composed \texttt{EntityZ} within \texttt{EntityY}, demonstrating a non-trivial multi-node Participant Path.
 
 \subsubsection{Query Construction}
 
@@ -202,17 +204,17 @@ The PDM defines ``specific representation details such as data type and precisio
 
 \subsection{Generalization}
 
-UDDL Generalization can be represented as a subclassing relationship in RDF, i.e., \texttt{rdfs:subClassOf} represents inclusion logic (an instance of the subclass is necessarily an instance of the superclass).  Note that in Data Modeling and Logic, Generalization implies Set Inclusion.  For example, if \texttt{Jet} specializes \texttt{Aircraft}, then every instance of \texttt{Jet} is also considered an instance of \texttt{Aircraft}.  \texttt{rdfs:subClassOf} does not imply polymorphism.
+UDDL Generalization can be represented as a subclassing relationship in RDF, i.e., \texttt{rdfs:subClassOf} represents inclusion logic (an instance of the subclass is necessarily an instance of the superclass).  Note that in data modeling and logic, Generalization implies set inclusion.  For example, if \texttt{Jet} specializes \texttt{Aircraft}, then every instance of \texttt{Jet} is also considered an instance of \texttt{Aircraft}.  \texttt{rdfs:subClassOf} does not imply polymorphism.
 
 \subsection{Realization}
 
-In OWL, this refinement relationship can be modeled using \texttt{rdfs:subClassOf}.  To differentiate from Generalization-generated sub-classing, it is necessary to compare parent ontologies.  If the element declaring a sub-class has a parent ontology that is generated from a CDM, then there is no Realization possible and this must be a Generalization relationship.  However, for elements in LDM-generated ontologies, if the sub-class is contained in a CDM, then it is a Realization.  Similarly for elements in PDM-generated ontologies, if the sub-class is contained in an LDM, then it is a Realization.
+In OWL, the Realization or refinement relationship can be modeled using \texttt{rdfs:subClassOf}.  To differentiate from Generalization-generated sub-classing, it is necessary to compare parent ontologies.  If the element declaring a sub-class has a parent ontology that is generated from a CDM, then there is no Realization possible and this must be a Generalization relationship.  However, for elements in LDM-generated ontologies, if the sub-class is contained in a CDM, then it is a Realization.  Similarly for elements in PDM-generated ontologies, if the sub-class is contained in an LDM, then it is a Realization.
 
 This as a side-effect enables ``semantic polymorphism'': for example, by making a \texttt{logical:Measurement} a subclass of a \texttt{conceptual:Observable}, any data tagged with a specific measurement (e.g., ``50 Degrees Celsius'') is automatically inferred to be an instance of the concept ``Temperature''.  An application querying for ``Temperature'' will retrieve any temperature-related data regardless of whether it was recorded in Celsius, Fahrenheit, or Kelvin, provided the ontology links them correctly.    
 
 \subsection{Observable}
 
-UDDL Observables are mapped to \texttt{owl:Class}.  While \texttt{owl:DatatypeProperty} could be used, considering potential realizations of conceptual Observables as logical Measurements hints that a \texttt{owl:Class} is more flexible and appropriate mapping. 
+UDDL Observables are mapped to \texttt{owl:Class}.  While \texttt{owl:DatatypeProperty} could be used, considering potential realizations of conceptual Observables as logical Measurements hints that a \texttt{owl:Class} is a more flexible and appropriate mapping. 
 
 \subsection{Entity}
 
