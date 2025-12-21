@@ -3,7 +3,7 @@ from typing import List, Union
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class EntityResolution:
     rolename: str
 
@@ -11,7 +11,7 @@ class EntityResolution:
         return f".{self.rolename}"
 
 
-@dataclass
+@dataclass(frozen=True)
 class AssociationResolution:
     rolename: str
     association_name: str
