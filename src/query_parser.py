@@ -1,4 +1,5 @@
 import re
+import argparse
 from dataclasses import dataclass
 from typing import List, Optional, Union
 
@@ -8,21 +9,43 @@ class Reference:
     entity: Optional[str]
     characteristic: str
 
+    def __str__(self) -> str:
+        return f"{self.entity}.{self.characteristic}"
+
+    def __repr__(self) -> str:
+        return f"Reference(entity={self.entity}, characteristic={self.characteristic})"
+
 
 @dataclass(frozen=True)
 class ProjectedCharacteristic:
     reference: Reference
     alias: Optional[str] = None
 
+    def __str__(self) -> str:
+        return f"{self.reference}{f' AS {self.alias}' if self.alias else ''}"
+
+    def __repr__(self) -> str:
+        return f"ProjectedCharacteristic(reference={self.reference}, alias={self.alias})"
+
 
 @dataclass(frozen=True)
 class AllCharacteristics:
-    pass
+    def __str__(self) -> str:
+        return "*"
+
+    def __repr__(self) -> str:
+        return "AllCharacteristics()"
 
 
 @dataclass(frozen=True)
 class EntityWildcard:
     entity: str
+
+    def __str__(self) -> str:
+        return f"{self.entity}*"
+
+    def __repr__(self) -> str:
+        return f"EntityWildcard(entity={self.entity})"
 
 
 Projection = Union[ProjectedCharacteristic, AllCharacteristics, EntityWildcard]
@@ -33,11 +56,23 @@ class Entity:
     name: str
     alias: Optional[str] = None
 
+    def __str__(self) -> str:
+        return f"{self.name}{f' AS {self.alias}' if self.alias else ''}"
+
+    def __repr__(self) -> str:
+        return f"Entity(name={self.name}, alias={self.alias})"
+
 
 @dataclass(frozen=True)
 class Equivalence:
     left: Reference
     right: Reference
+
+    def __str__(self) -> str:
+        return f"{self.left} = {self.right}"
+
+    def __repr__(self) -> str:
+        return f"Equivalence(left={self.left}, right={self.right})"
 
 
 @dataclass(frozen=True)
@@ -45,11 +80,23 @@ class Join:
     target: Entity
     on: List[Equivalence]
 
+    def __str__(self) -> str:
+        return f"JOIN {self.target} ON {' AND '.join(str(e) for e in self.on)}"
+
+    def __repr__(self) -> str:
+        return f"Join(target={self.target}, on={self.on})"
+
 
 @dataclass(frozen=True)
 class FromClause:
     entities: List[Entity]
     joins: List[Join]
+
+    def __str__(self) -> str:
+        return f"FROM {', '.join(str(e) for e in self.entities)} {' '.join(str(j) for j in self.joins)}"
+
+    def __repr__(self) -> str:
+        return f"FromClause(entities={self.entities}, joins={self.joins})"
 
 
 @dataclass(frozen=True)
@@ -57,6 +104,12 @@ class QueryStatement:
     projections: List[Projection]
     from_clause: FromClause
     qualifier: Optional[str] = None
+
+    def __str__(self) -> str:
+        return f"SELECT {', '.join(str(p) for p in self.projections)} {self.from_clause} {self.qualifier if self.qualifier else ''}"
+
+    def __repr__(self) -> str:
+        return f"QueryStatement(projections={self.projections}, from_clause={self.from_clause}, qualifier={self.qualifier})"
 
 
 class UDDLQueryParser:
@@ -226,6 +279,16 @@ def get_ast(query_string):
 
 
 if __name__ == "__main__":
-    query = "SELECT EntityA.attr1 AS a, attr2 FROM EntityA JOIN EntityB ON EntityA.id = EntityB.ref_id"
+    parser = argparse.ArgumentParser(description="Parse a UDDL query.")
+    parser.add_argument("query", nargs="?", help="The UDDL query string to parse")
+    
+    args = parser.parse_args()
+
+    if args.query:
+        query = args.query
+    else:
+        query = "SELECT EntityA.attr1 AS a, attr2 FROM EntityA JOIN EntityB ON EntityA.id = EntityB.ref_id"
+        print(f"No query provided. Parsing example query:\n  {query}\n")
+
     ast = get_ast(query)
     print(ast)

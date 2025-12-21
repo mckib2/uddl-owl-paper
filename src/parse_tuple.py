@@ -94,24 +94,31 @@ def parse_tuple(tuple_file: pathlib.Path) -> List[Union[UddlTuple, QueryStatemen
                     multiplicity = None
                     predicate = predicate_raw
                     
-                    mult_match = re.match(r'(\w+)\[(.*)\]', predicate_raw)
-                    if mult_match:
-                        predicate = mult_match.group(1)
-                        mult_str = mult_match.group(2)
+                    if '[' in predicate_raw:
+                        bracket_idx = predicate_raw.find('[')
+                        predicate = predicate_raw[:bracket_idx]
+                        bracket_content = predicate_raw[bracket_idx:]
                         
-                        if ',' in mult_str:
-                            # associates[s, t]
-                            s, t = [x.strip() for x in mult_str.split(',')]
-                            multiplicity = [int(s), int(t)]
-                        else:
-                            # composes[n]
-                            multiplicity = int(mult_str)
+                        # Extract all groups like [a, b], [c, d]
+                        groups = re.findall(r'\[(.*?)\]', bracket_content)
+                        
+                        multiplicity = []
+                        for group in groups:
+                            # Split by comma
+                            values = [x.strip() for x in group.split(',')]
+                            for val in values:
+                                if val: # Skip empty
+                                    try:
+                                        multiplicity.append(int(val))
+                                    except ValueError:
+                                        # Keep as string if not int (e.g. '*')
+                                        multiplicity.append(val)
                     else:
                         # Defaults
                         if predicate == 'composes':
-                            multiplicity = 1
+                            multiplicity = [1, 1]
                         elif predicate == 'associates':
-                            multiplicity = [-1, -1]
+                            multiplicity = [-1, -1, -1, -1]
                     
                     if predicate == 'associates':
                         # Parse object as ParticipantPath
@@ -134,10 +141,6 @@ def parse_tuple(tuple_file: pathlib.Path) -> List[Union[UddlTuple, QueryStatemen
                          
                          rolename = rolename[0].lower() + rolename[1:]
 
-                    
-                    # Ensure rolename is not overwritten if it was parsed as None but object_ exists
-                    # (Wait, logic above handles if not rolename)
-                    
                     tuples.append(UddlTuple(subject=subject, predicate=predicate, object=object_, rolename=rolename, multiplicity=multiplicity))
                 else:
                      print(f"Warning: Malformed tuple at line {line_num}: {line_stripped}")

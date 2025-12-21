@@ -2,8 +2,9 @@ import xml.etree.ElementTree as ET
 from typing import List, Union, Set, Dict, Any, Optional
 from dataclasses import dataclass
 
-from tuple import UddlTuple, Query
+from tuple import UddlTuple
 from participant_path_parser import ParticipantPath, EntityResolution, AssociationResolution
+from query_parser import QueryStatement
 
 # Namespaces
 NS_RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -15,7 +16,7 @@ NS_DEFAULT = "http://example.org/uddl#"
 def _qname(ns, tag):
     return f"{{{ns}}}{tag}"
 
-def tuple2owl(tuples: List[Union[UddlTuple, Query]]) -> ET.ElementTree:
+def tuple2owl(tuples: List[Union[UddlTuple, QueryStatement]]) -> ET.ElementTree:
     # Filter out queries
     data_tuples = [t for t in tuples if isinstance(t, UddlTuple)]
 
@@ -98,7 +99,7 @@ def tuple2owl(tuples: List[Union[UddlTuple, Query]]) -> ET.ElementTree:
         sub.set(_qname(NS_RDF, "resource"), get_resource(parent_resource))
         return sub
         
-    def create_restriction(parent, on_property, on_class, max_card=None):
+    def create_restriction(parent, on_property, on_class, min_card=None, max_card=None):
         r = ET.SubElement(parent, _qname(NS_RDFS, "subClassOf"))
         restriction = ET.SubElement(r, _qname(NS_OWL, "Restriction"))
         
@@ -108,8 +109,13 @@ def tuple2owl(tuples: List[Union[UddlTuple, Query]]) -> ET.ElementTree:
         if on_class:
             cls_elem = ET.SubElement(restriction, _qname(NS_OWL, "onClass"))
             cls_elem.set(_qname(NS_RDF, "resource"), get_resource(on_class))
+
+        if min_card is not None and min_card != -1 and str(min_card) != '*':
+             card = ET.SubElement(restriction, _qname(NS_OWL, "minCardinality"))
+             card.set(_qname(NS_RDF, "datatype"), f"{NS_XSD}nonNegativeInteger")
+             card.text = str(min_card)
             
-        if max_card is not None and max_card != -1:
+        if max_card is not None and max_card != -1 and str(max_card) != '*':
             card = ET.SubElement(restriction, _qname(NS_OWL, "maxCardinality"))
             card.set(_qname(NS_RDF, "datatype"), f"{NS_XSD}nonNegativeInteger")
             card.text = str(max_card)
@@ -186,16 +192,19 @@ def tuple2owl(tuples: List[Union[UddlTuple, Query]]) -> ET.ElementTree:
                 role = t.rolename if t.rolename else t.object
                 prop_name = f"hasComposition{role}"
                 
-                # Determine Max Cardinality
+                # Determine Cardinality
+                min_c = 0
                 max_c = -1
-                if isinstance(t.multiplicity, list):
+                
+                if isinstance(t.multiplicity, list) and len(t.multiplicity) >= 2:
+                    min_c = t.multiplicity[0]
                     max_c = t.multiplicity[1]
                 elif isinstance(t.multiplicity, int):
                     max_c = t.multiplicity
                 elif str(t.multiplicity).isdigit():
                     max_c = int(t.multiplicity)
                 
-                create_restriction(cls_elem, prop_name, t.object, max_c)
+                create_restriction(cls_elem, prop_name, t.object, min_c, max_c)
 
     # Process Observables
     if observables:
@@ -261,20 +270,30 @@ def tuple2owl(tuples: List[Union[UddlTuple, Query]]) -> ET.ElementTree:
                         p2 = ET.SubElement(chain_list, _qname(NS_RDF, "Description"))
                         p2.set(_qname(NS_RDF, "about"), get_resource(comp_prop))
             
-            max_c = -1
-            if isinstance(t.multiplicity, list):
-                max_c = t.multiplicity[1]
-            elif isinstance(t.multiplicity, int):
-                max_c = t.multiplicity
-            elif str(t.multiplicity).isdigit():
-                max_c = int(t.multiplicity)
+            s_min = 0
+            s_max = -1
+            t_min = 0
+            t_max = -1
+
+            if isinstance(t.multiplicity, list) and len(t.multiplicity) == 4:
+                s_min = t.multiplicity[0]
+                s_max = t.multiplicity[1]
+                t_min = t.multiplicity[2]
+                t_max = t.multiplicity[3]
+            elif isinstance(t.multiplicity, list) and len(t.multiplicity) == 2:
+                 # Fallback if only 2 provided (maybe older parse?) treated as target bounds?
+                 t_min = t.multiplicity[0]
+                 t_max = t.multiplicity[1]
 
             # Add restriction to Association Class
             if target_cls:
-                create_restriction(cls_elem, target_prop, target_cls, max_c)
+                create_restriction(cls_elem, target_prop, target_cls, t_min, t_max)
             
-            # The source property usually points to the context.
+            # Source restriction
+            source_cls = None
             if isinstance(t.object, ParticipantPath):
-                 create_restriction(cls_elem, source_prop, t.object.start_type, 1) # Usually 1 context
+                 source_cls = t.object.start_type
+            
+            create_restriction(cls_elem, source_prop, source_cls, s_min, s_max)
 
     return ET.ElementTree(root)

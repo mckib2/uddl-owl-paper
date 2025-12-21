@@ -2,9 +2,9 @@ from typing import List, Union
 from collections import defaultdict
 
 from participant_path_parser import EntityResolution, AssociationResolution, ParticipantPath
-from revised_query_parser import (
+from query_parser import (
     QueryStatement, FromClause, Entity, Join, Equivalence, Reference,
-    ProjectedCharacteristic, AllCharacteristics, EntityWildcard
+    ProjectedCharacteristic, AllCharacteristics, EntityWildcard, get_ast
 )
 
 
@@ -118,7 +118,7 @@ def path2query(paths: List[ParticipantPath]) -> Union[QueryStatement, List[Query
                         target=Entity(name=target_name, alias=None),
                         on=[Equivalence(
                             left=Reference(entity=current_entity_ref, characteristic=res.rolename),
-                            right=Reference(entity=target_name, characteristic="id") # Simplified ID match
+                            right=Reference(entity=target_name, characteristic="id") # FIXME: use the actual characteristic from the target entity
                         )]
                     )
                 
@@ -148,43 +148,96 @@ def path2query(paths: List[ParticipantPath]) -> Union[QueryStatement, List[Query
     return queries[0] if len(queries) == 1 else queries
 
 
-# Example usage to verify logic
 if __name__ == "__main__":
-    # Simulate a query: SELECT A.x, B.y FROM A JOIN B ON A.link = B
-    # Recreate the sample_ast using classes
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser(description="Convert between UDDL queries and Participant Paths.")
+    parser.add_argument("input", nargs="*", help="UDDL query string OR list of Participant path strings")
+
+    args = parser.parse_args()
+
+    # Heuristic detection of input type
+    is_query = False
+    input_data = args.input
     
-    sample_ast = QueryStatement(
-        projections=[
-            ProjectedCharacteristic(reference=Reference(entity="A", characteristic="x")),
-            ProjectedCharacteristic(reference=Reference(entity="B", characteristic="y"))
-        ],
-        from_clause=FromClause(
-            entities=[Entity(name="A", alias="A")],
-            joins=[
-                Join(
-                    target=Entity(name="B", alias="B"),
-                    on=[Equivalence(
-                        left=Reference(entity="A", characteristic="link"),
-                        right=Reference(entity="B", characteristic="id")
-                    )]
-                )
-            ]
-        ),
-        qualifier=None
-    )
+    if input_data:
+        # Check if the first argument looks like the start of a query
+        first_arg = input_data[0].strip().upper()
+        if first_arg == "SELECT" or first_arg.startswith("SELECT "):
+            is_query = True
 
-    paths = query2path(sample_ast)
-    print("Query to Paths:")
-    for p in paths:
-        print(f"  {p}")
-
-    reconstructed_query = path2query(paths)
-    if isinstance(reconstructed_query, list):
-        reconstructed_query = reconstructed_query[0]
-        
-    print("\nPaths back to Query (Projections):")
-    for proj in reconstructed_query.projections:
-        if isinstance(proj, ProjectedCharacteristic):
-            print(f"  {proj.reference}")
+        if is_query:
+            # Join all arguments to form the query string
+            query_str = " ".join(input_data)
+            try:
+                ast = get_ast(query_str)
+                paths = query2path(ast)
+                for p in paths:
+                    print(str(p))
+            except Exception as e:
+                print(f"Error processing query: {e}", file=sys.stderr)
+                sys.exit(1)
         else:
-            print(f"  {proj}")
+            # Treat as list of paths
+            try:
+                parsed_paths = []
+                for p_str in input_data:
+                    parsed_paths.append(ParticipantPath.parse(p_str))
+                
+                queries = path2query(parsed_paths)
+                
+                def print_query(q):
+                    print("Query:")
+                    print(q)
+                
+                if isinstance(queries, list):
+                    for q in queries:
+                        print_query(q)
+                else:
+                    print_query(queries)
+                    
+            except Exception as e:
+                print(f"Error processing paths: {e}", file=sys.stderr)
+                sys.exit(1)
+
+    else:
+        # Default behavior if no arguments provided
+        # Simulate a query: SELECT A.x, B.y FROM A JOIN B ON A.link = B
+        # Recreate the sample_ast using classes
+        
+        sample_ast = QueryStatement(
+            projections=[
+                ProjectedCharacteristic(reference=Reference(entity="A", characteristic="x")),
+                ProjectedCharacteristic(reference=Reference(entity="B", characteristic="y"))
+            ],
+            from_clause=FromClause(
+                entities=[Entity(name="A", alias="A")],
+                joins=[
+                    Join(
+                        target=Entity(name="B", alias="B"),
+                        on=[Equivalence(
+                            left=Reference(entity="A", characteristic="link"),
+                            right=Reference(entity="B", characteristic="id")
+                        )]
+                    )
+                ]
+            ),
+            qualifier=None
+        )
+
+        paths = query2path(sample_ast)
+        print("Query to Paths:")
+        for p in paths:
+            print(f"  {p}")
+
+        reconstructed_query = path2query(paths)
+        if isinstance(reconstructed_query, list):
+            reconstructed_query = reconstructed_query[0]
+            
+        print("\nPaths back to Query (Projections):")
+        for proj in reconstructed_query.projections:
+            if isinstance(proj, ProjectedCharacteristic):
+                print(f"  {proj.reference}")
+            else:
+                print(f"  {proj}")
