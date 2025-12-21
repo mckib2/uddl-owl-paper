@@ -30,4 +30,4 @@ SELECT * FROM Airframe;
 (Divorce, composes[1], Identifier,)
 (Divorce, associates[1, 1], Marriage.husband, husband)
 (Divorce, associates[1, 1], Marriage.wife, wife)
-SELECT * FROM Person JOIN ON Divorce.husband;
+SELECT * FROM Person JOIN Divorce ON Person = Divorce.husband;

@@ -3,12 +3,12 @@ import pathlib
 
 import re
 
-from tuple import UddlTuple, Query
-from query_parser import parse_query
+from tuple import UddlTuple
+from query_parser import get_ast as get_query_ast, QueryStatement
 from participant_path_parser import ParticipantPath
 
 
-def parse_tuple(tuple_file: pathlib.Path) -> List[Union[UddlTuple, Query]]:
+def parse_tuple(tuple_file: pathlib.Path) -> List[Union[UddlTuple, QueryStatement]]:
     tuples = []
     with open(tuple_file, 'r') as file:
         query_buffer = []
@@ -32,7 +32,7 @@ def parse_tuple(tuple_file: pathlib.Path) -> List[Union[UddlTuple, Query]]:
                 # Check if query ends on same line
                 if ';' in line:
                     query_text = ''.join(query_buffer).strip()
-                    query = parse_query(query_text=query_text)
+                    query = get_query_ast(query_string=query_text)
                     if query:
                         tuples.append(query)
                     else:
@@ -47,7 +47,7 @@ def parse_tuple(tuple_file: pathlib.Path) -> List[Union[UddlTuple, Query]]:
                 # Check if query ends with semicolon
                 if ';' in line:
                     query_text = ''.join(query_buffer).strip()
-                    query = parse_query(query_text=query_text)
+                    query = get_query_ast(query_string=query_text)
                     if query:
                         tuples.append(query)
                     else:
