@@ -10,7 +10,11 @@ class Reference:
     characteristic: str
 
     def __str__(self) -> str:
-        return f"{self.entity}.{self.characteristic}"
+        if self.entity and self.characteristic:
+             return f"{self.entity}.{self.characteristic}"
+        if self.entity:
+             return self.entity
+        return self.characteristic
 
     def __repr__(self) -> str:
         return f"Reference(entity={self.entity}, characteristic={self.characteristic})"
@@ -66,10 +70,12 @@ class Entity:
 @dataclass(frozen=True)
 class Equivalence:
     left: Reference
-    right: Reference
+    right: Optional[Reference] = None
 
     def __str__(self) -> str:
-        return f"{self.left} = {self.right}"
+        if self.right:
+            return f"{self.left} = {self.right}"
+        return str(self.left)
 
     def __repr__(self) -> str:
         return f"Equivalence(left={self.left}, right={self.right})"
@@ -235,6 +241,8 @@ class UDDLQueryParser:
         if self._peek()[0] == 'AS':
             self._consume('AS')
             alias = self._consume('ID')
+        elif self._peek()[0] == 'ID':
+            alias = self._consume('ID')
         return Entity(name=entity_type, alias=alias)
 
     def parse_join_expression(self) -> Join:
@@ -259,8 +267,10 @@ class UDDLQueryParser:
     def parse_equivalence_expression(self) -> Equivalence:
         """Parses characteristic equivalence (e.g., A.id = B.ref)"""
         left = self.parse_char_ref()
-        self._consume('EQUALS')
-        right = self.parse_char_ref()
+        right = None
+        if self._peek()[0] == 'EQUALS':
+            self._consume('EQUALS')
+            right = self.parse_char_ref()
         return Equivalence(left=left, right=right)
 
     def parse_char_ref(self) -> Reference:

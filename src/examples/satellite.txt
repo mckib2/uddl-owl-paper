@@ -1,0 +1,62 @@
+(Louver, composes, Identifier,)
+(Louver, composes, HealthState,)
+
+(Frame, composes, Identifier,)
+(Frame, composes, Temperature,)
+
+(Louver_PartOf_Frame, composes, Identifier,)
+(Louver_PartOf_Frame, associates[1, 1][1, 1], Louver, assembly)
+(Louver_PartOf_Frame, associates[1, 1][1, 1], Frame, part)
+
+(Sensor, composes, Identifier,)
+
+(TemperatureSensor, specializes, Temperature,)
+(TemperatureSensor, composes, Identifier,)
+
+(TemperatureSensor_Observe_LouverFrame, composes, Identifier,)
+(TemperatureSensor_Observe_LouverFrame, associates[1, 1][1, 1], Louver_PartOf_Frame.part, observed)
+(TemperatureSensor_Observe_LouverFrame, associates[1, 1][1, 1], TemperatureSensor, observer)
+
+(Blade, composes, Identifier,)
+(Blade, composes, Angle,)
+(Blade, composes, RadiantIntensity, emissivity)
+
+(Blade_PartOf_Louver, composes, Identifier,)
+(Blade_PartOf_Louver, composes, HealthState,)
+(Blade_PartOf_Louver, associates[1, 1][1, 1], Blade, part)
+(Blade_PartOf_Louver, associates[1, 1][1, 1], Louver, assembly)
+
+(PositionSensor, specializes, Sensor,)
+(PositionSensor, composes, Identifier,)
+
+(PositionSensor_Observe_BladeLouver, composes, Identifier,)
+(PositionSensor_Observe_BladeLouver, associates[1, 1][1, 1], Blade_PartOf_Louver.part, observed)
+(PositionSensor_Observe_BladeLouver, associates[1, 1][1, 1], PositionSensor, observer)
+
+SELECT
+    frame_join.temperature AS frame_temperature
+FROM TemperatureSensor temperatureSensor_from
+    JOIN TemperatureSensor_Observe_LouverFrame temperatureSensor_Observe_LouverFrame_join 
+        ON temperatureSensor_Observe_LouverFrame_join.observer = temperatureSensor_from
+    JOIN Frame_PartOf_Louver frame_PartOf_Louver_join 
+        ON temperatureSensor_Observe_LouverFrame_join.observed
+    JOIN Frame frame_join 
+        ON frame_PartOf_Louver_join.part;
+
+SELECT
+    blade_join.angle AS blade_angle,
+    blade_join.emissivity AS emissivity_state
+FROM PositionSensor positionSensor_from
+    JOIN PositionSensor_Observe_LouverBlade positionSensor_Observe_LouverBlade_join 
+        ON positionSensor_Observe_LouverBlade_join.observer = positionSensor_from
+    JOIN Blade_PartOf_Louver blade_PartOf_Louver_join 
+        ON positionSensor_Observe_LouverBlade_join.observed
+    JOIN Blade blade_join 
+        ON blade_PartOf_Louver_join.part;
+
+SELECT
+    louver_from.healthState AS health_check,
+    blade_PartOf_Louver_join.healthState AS blade_mechanical_compliance_check
+FROM Louver louver_from
+    JOIN Blade_PartOf_Louver blade_PartOf_Louver_join 
+        ON blade_PartOf_Louver_join.assembly = louver_from;

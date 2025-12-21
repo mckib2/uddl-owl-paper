@@ -1,5 +1,11 @@
 from typing import List, Union
 from collections import defaultdict
+import pathlib
+import xml.etree.ElementTree as ET
+
+from tuple import UddlTuple
+from parse_tuple import parse_tuple
+from uddl2tuple import uddl2tuple
 
 from participant_path_parser import EntityResolution, AssociationResolution, ParticipantPath
 from query_parser import (
@@ -79,7 +85,77 @@ def query2path(query_ast: QueryStatement) -> List[ParticipantPath]:
     return results
 
 
-def path2query(paths: List[ParticipantPath]) -> Union[QueryStatement, List[QueryStatement]]:
+def find_reference_observable(entity_name: str, tuples: List[UddlTuple]) -> str:
+    """
+    Finds the observable characteristic used for reference for a given entity name from the model tuples.
+    Assumes a well-formed model where the reference observable is the first composed observable.
+    """
+    if not tuples:
+        raise ValueError("Model is required to find reference observable")
+    
+    # Identify Entities (Subjects) to distinguish Observables
+    entities = {t.subject for t in tuples if isinstance(t, UddlTuple)}
+    
+    for t in tuples:
+        if isinstance(t, UddlTuple) and t.subject == entity_name and t.predicate == 'composes':
+            # Check if object is an Observable (not an Entity)
+            if isinstance(t.object, str) and t.object not in entities:
+                 return t.rolename
+
+    raise ValueError(f"No observable characteristic found for entity {entity_name}")
+
+
+def find_association_role(association_name: str, participant_type: str, model: List[UddlTuple]) -> str:
+    """
+    Finds the rolename (characteristic) on the Association entity that refers to the participant_type.
+    """
+    if not model:
+        return "id" # Fallback, though likely wrong for association
+        
+    for t in model:
+        if isinstance(t, UddlTuple) and t.subject == association_name and t.predicate == 'associates':
+            # Check if object matches participant type
+            # Object could be string or ParticipantPath.
+            # If Path, start_type or resolution end type must match.
+            
+            match = False
+            if isinstance(t.object, str):
+                match = (t.object == participant_type)
+            elif isinstance(t.object, ParticipantPath):
+                # If path, we assume the path points to the participant
+                # e.g. (Assoc, associates, A.prop) -> refers to A? Or Prop?
+                # Usually (Assoc, associates, A)
+                if t.object.start_type == participant_type:
+                    match = True
+                    
+            if match:
+                return t.rolename
+                
+    # Fallback: construct default rolename from participant type (camelCase)
+    return participant_type[0].lower() + participant_type[1:]
+
+
+
+def find_property_type(entity_name: str, property_name: str, tuples: List[UddlTuple]) -> str:
+    """
+    Finds the type (object) of a property (rolename) for a given entity.
+    Returns the property_name itself if not found (fallback).
+    """
+    if not tuples:
+        return property_name
+        
+    for t in tuples:
+        if isinstance(t, UddlTuple) and t.subject == entity_name:
+             # Check rolename
+             if t.rolename == property_name:
+                 # Found it. Return the object (type).
+                 # Note: object could be ParticipantPath, but usually Entity name for compositions.
+                 return str(t.object)
+                 
+    return property_name
+
+
+def path2query(paths: List[ParticipantPath], model: List[UddlTuple] = None) -> Union[QueryStatement, List[QueryStatement]]:
     """
     Transforms a list of ParticipantPath objects into one or more query ASTs.
     Paths starting with the same entity type are merged into a single query.
@@ -104,7 +180,8 @@ def path2query(paths: List[ParticipantPath]) -> Union[QueryStatement, List[Query
             intermediate_res = p.resolutions[:-1]
             
             # Track current entity/alias as we build the join chain
-            current_entity_ref = start_type
+            current_alias = start_type
+            current_type = start_type
             
             # Process intermediate resolutions into JOINs
             for i, res in enumerate(intermediate_res):
@@ -112,24 +189,43 @@ def path2query(paths: List[ParticipantPath]) -> Union[QueryStatement, List[Query
                 step_key = tuple(p.resolutions[:i+1])
                 
                 if step_key not in joins_registry:
-                    target_name = res.association_name if isinstance(res, AssociationResolution) else res.rolename
-                    # Generate a unique alias if needed (omitted here for simplicity, using target_name)
+                    if isinstance(res, AssociationResolution):
+                         target_type = res.association_name
+                         target_alias = res.association_name 
+                         
+                         # For Association Resolution:
+                         # JOIN Target (Assoc) ON Source.role = Target.ParticipantRole
+                         # Source.role comes from res.rolename
+                         # Target.ParticipantRole must be found in the model
+                         right_char = find_association_role(target_type, current_type, model)
+                         
+                    else:
+                         # EntityResolution
+                         # Look up the type of the property
+                         target_type = find_property_type(current_type, res.rolename, model)
+                         target_alias = res.rolename
+                         
+                         # For Entity Resolution:
+                         # JOIN Target (Entity) ON Source.role = Target.Identifier
+                         right_char = find_reference_observable(target_type, model)
+
                     joins_registry[step_key] = Join(
-                        target=Entity(name=target_name, alias=None),
+                        target=Entity(name=target_type, alias=target_alias),
                         on=[Equivalence(
-                            left=Reference(entity=current_entity_ref, characteristic=res.rolename),
-                            right=Reference(entity=target_name, characteristic="id") # FIXME: use the actual characteristic from the target entity
+                            left=Reference(entity=current_alias, characteristic=res.rolename),
+                            right=Reference(entity=target_alias, characteristic=right_char)
                         )]
                     )
                 
-                # Update current_entity_ref for next step. 
-                # Since we didn't alias target (alias=None), we use its name.
-                current_entity_ref = joins_registry[step_key].target.name
+                # Update current pointers for next step
+                join_obj = joins_registry[step_key]
+                current_alias = join_obj.target.alias or join_obj.target.name
+                current_type = join_obj.target.name
 
             # Add the projection
             projections.append(
                 ProjectedCharacteristic(
-                    reference=Reference(entity=current_entity_ref, characteristic=leaf_res.rolename),
+                    reference=Reference(entity=current_alias, characteristic=leaf_res.rolename),
                     alias=None
                 )
             )
@@ -154,8 +250,37 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Convert between UDDL queries and Participant Paths.")
     parser.add_argument("input", nargs="*", help="UDDL query string OR list of Participant path strings")
+    parser.add_argument("--model", help="Path to UDDL model file (.face) or tuple file (.txt)")
 
     args = parser.parse_args()
+
+    # Load model if provided
+    model_tuples = []
+    if args.model:
+        model_path = pathlib.Path(args.model)
+        if not model_path.exists():
+             print(f"Error: Model file not found: {model_path}", file=sys.stderr)
+             sys.exit(1)
+        
+        # Check extension
+        if model_path.suffix.lower() == '.face' or model_path.suffix.lower() == '.xml':
+             try:
+                 tree = ET.parse(model_path)
+                 loaded = uddl2tuple(tree)
+                 if loaded:
+                      model_tuples = [t for t in loaded if isinstance(t, UddlTuple)]
+             except Exception as e:
+                 print(f"Error parsing UDDL model: {e}", file=sys.stderr)
+                 sys.exit(1)
+        else:
+             # Assume tuple file
+             try:
+                 loaded = parse_tuple(model_path)
+                 if loaded:
+                      model_tuples = [t for t in loaded if isinstance(t, UddlTuple)]
+             except Exception as e:
+                 print(f"Error parsing tuple model: {e}", file=sys.stderr)
+                 sys.exit(1)
 
     # Heuristic detection of input type
     is_query = False
@@ -185,7 +310,7 @@ if __name__ == "__main__":
                 for p_str in input_data:
                     parsed_paths.append(ParticipantPath.parse(p_str))
                 
-                queries = path2query(parsed_paths)
+                queries = path2query(parsed_paths, model=model_tuples)
                 
                 def print_query(q):
                     print("Query:")
@@ -231,7 +356,7 @@ if __name__ == "__main__":
         for p in paths:
             print(f"  {p}")
 
-        reconstructed_query = path2query(paths)
+        reconstructed_query = path2query(paths, model=model_tuples)
         if isinstance(reconstructed_query, list):
             reconstructed_query = reconstructed_query[0]
             
