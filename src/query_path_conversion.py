@@ -208,11 +208,86 @@ def _resolve_target_type(paths: List[ParticipantPath], model: List[UddlTuple], t
     return last_res.rolename
 
 
+def _reconstruct_alias_map(
+    model: List[UddlTuple], 
+    paths: List[ParticipantPath], 
+    partial_map: Dict[str, List[ParticipantPath]] = None
+) -> Dict[str, List[ParticipantPath]]:
+    """
+    Generates a full alias map from terminal paths and a partial map (for AND joins).
+    Uses the UDDL model to resolve rolenames to Entity Types for alias naming.
+    """
+    alias_map: Dict[str, List[ParticipantPath]] = {}
+    partial_map = partial_map or {}
+    alias_map.update(partial_map)
+    
+    # Track path strings to existing aliases to prevent duplicate nodes
+    path_to_alias: Dict[str, str] = {str(p): k for k, v in partial_map.items() for p in v}
+    
+    def get_entity_type(source_type: str, rolename: str) -> str:
+        """Looks up the target type in the model tuples."""
+        if not model:
+            return rolename
+        for t in model:
+            if t.subject == source_type and t.rolename == rolename:
+                # Return the type name (stripping namespaces if present)
+                obj = str(t.object)
+                return obj.split('.')[-1]
+        return rolename
+
+    def get_or_create_alias(path_obj: ParticipantPath) -> str:
+        path_str = str(path_obj)
+        if path_str in path_to_alias:
+            return path_to_alias[path_str]
+        
+        # Determine the Type name for the alias
+        if not path_obj.resolutions:
+            type_name = path_obj.start_type
+        else:
+            # We need to find the type of the parent to look up the current rolename
+            parent_path = ParticipantPath(path_obj.start_type, path_obj.resolutions[:-1])
+            parent_alias = get_or_create_alias(parent_path)
+            
+            # Simplified tracker: find the type of the parent_alias
+            # In this recursive call, we'll know the parent type because we processed root-out
+            parent_type = path_obj.start_type
+            if parent_path.resolutions:
+                # Trace types from root
+                curr_type = path_obj.start_type
+                for res in parent_path.resolutions:
+                    curr_type = get_entity_type(curr_type, res.rolename)
+                parent_type = curr_type
+            
+            type_name = get_entity_type(parent_type, path_obj.resolutions[-1].rolename)
+        
+        # Ensure unique alias name (e.g., if there are multiple 'B' types)
+        alias_name = type_name
+        counter = 1
+        while alias_name in alias_map:
+            alias_name = f"{type_name}_{counter}"
+            counter += 1
+            
+        alias_map[alias_name] = [path_obj]
+        path_to_alias[path_str] = alias_name
+        return alias_name
+
+    # Process all paths. Note: terminal paths end in a characteristic, 
+    # so we only build aliases for the prefix (the entities).
+    for p in paths:
+        entity_path = ParticipantPath(p.start_type, p.resolutions[:-1])
+        # Ensure the whole chain from root to entity is aliased
+        for i in range(len(entity_path.resolutions) + 1):
+            sub_path = ParticipantPath(p.start_type, entity_path.resolutions[:i])
+            get_or_create_alias(sub_path)
+
+    return alias_map
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="UDDL Query/Path Conversion")
     parser.add_argument("input", nargs="*", help="Query or Paths")
     parser.add_argument("--model", help="Path to .face or tuple file")
-    parser.add_argument("--alias-map", action="append", help="Define alias mapping (e.g. 'alias=path1,path2')")
+    parser.add_argument("--and-join", action="append", help="Explicit alias mapping, e.g. 'D:path1,path2'")
 
     args = parser.parse_args()
 
@@ -224,7 +299,7 @@ if __name__ == "__main__":
         else:
             model_tuples = [t for t in parse_tuple(p) if isinstance(t, UddlTuple)]
 
-    if args.input or args.alias_map:
+    if args.input or args.and_join:
         if args.input and args.input[0].upper().startswith("SELECT"):
             alias_map, projected_paths = query2path(query_ast=get_ast(" ".join(args.input)), model=model_tuples)
             print("\nAlias Map:")
@@ -235,23 +310,23 @@ if __name__ == "__main__":
             for p in projected_paths:
                 print(f"  {str(p)}")
         else:
-            # Assumes multiple paths correspond to one aliased entity
-            projected_paths = [ParticipantPath.parse(p) for p in args.input]
+            # Paths -> Query conversion with "reconstruct_alias_map"
+            terminal_paths = [ParticipantPath.parse(p) for p in args.input]
             
-            if args.alias_map:
-                alias_map = {}
-                for mapping in args.alias_map:
-                    if '=' in mapping:
-                        alias, paths_str = mapping.split('=', 1)
-                        paths_list = [ParticipantPath.parse(p.strip()) for p in paths_str.split(',')]
-                        alias_map[alias.strip()] = paths_list
-            else:
-                alias_map = {"target": projected_paths}
-
-            queries = path2query(alias_map=alias_map, projected_paths=projected_paths, model=model_tuples)
-            print("\nReconstructed:")
+            # Parse explicit AND joins from CLI: --and-join "D:A.b.d,A.c.d"
+            partial = {}
+            if args.and_join:
+                for aj in args.and_join:
+                    alias, p_list = aj.split(':')
+                    partial[alias] = [ParticipantPath.parse(ps.strip()) for ps in p_list.split(',')]
+            
+            # Generate the full graph automatically
+            full_map = _reconstruct_alias_map(model=model_tuples, paths=terminal_paths, partial_map=partial)
+            
+            # Convert to Query
+            queries = path2query(alias_map=full_map, projected_paths=terminal_paths, model=model_tuples)
             for q in queries:
-                print(q)
+                print(str(q))
     else:
         # Example: Diamond Join
         q = "SELECT d FROM A JOIN B ON A.b JOIN C ON A.c JOIN D ON D.b_ref = B AND D.c_ref = C"
