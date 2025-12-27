@@ -6,6 +6,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class EntityResolution:
     rolename: str
+    target_type: Union[str, None] = None
 
     def __str__(self) -> str:
         return f".{self.rolename}"

@@ -1,5 +1,36 @@
+"""
+The alias map is a dictionary-based data structure used during the conversion process to track the
+relationship between UDDL query aliases and their corresponding navigational paths. It serves as a
+middle layer that translates the relational structure of a SQL-like query into the navigational
+structure of ParticipantPaths.
+
+In the query2path function, the map is defined with the following structure:
+      Key: The Alias Name (e.g., a_from, b_in_A, or a generated name like t1) defined in the FROM or
+           JOIN clauses.
+    Value: A List of ParticipantPath objects that represent every possible way to reach that
+           specific entity instance starting from the root entity.
+
+The alias map is primarily used to solve two problems in the translation process:
+- Enforcing "AND" Semantics: In a standard tree-based path, each branch is independent. However,
+  in a "diamond join" where an entity (like D) is joined on two different criteria
+  (D.b = B AND D.c = C), the alias map groups both paths (A.b.d and A.c.d) under the single key D.
+  This ensures that during reconstruction, the logic knows these paths must converge on the same
+  instance rather than creating two separate entities.
+- Identity Resolution: According to the UDDL v1.1 grammar, many joins occur on the identity of an
+  entity rather than a named characteristic. The alias map allows the parser to identify when a
+  reference (like JOIN B ON A.b = B) is pointing to the entity's identity (the alias) rather than
+  an observable attribute.
+- Join Ordering: During the "Path to Query" conversion, the alias map is sorted by path depth.
+  This ensures that JOIN statements are reconstructed in the correct logical order, beginning at
+  the root entity and moving outward through the graph.
+- Characteristic Projection: Because UDDL queries should only select characteristics (observables)
+  and not the entities themselves, the alias map acts as a lookup table. When the query says
+  SELECT d.attr, the system uses the map to find the navigational path to alias d and then appends
+  the .attr resolution to create the final terminal path.
+"""
+
 from typing import List, Union, Dict, Tuple
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 import argparse
 import sys
 import pathlib
@@ -11,356 +42,232 @@ from uddl2tuple import uddl2tuple
 from participant_path_parser import EntityResolution, AssociationResolution, ParticipantPath
 from query_parser import (
     QueryStatement, FromClause, Entity, Join, Equivalence, Reference,
-    ProjectedCharacteristic, AllCharacteristics, get_ast
+    ProjectedCharacteristic, AllCharacteristics, EntityWildcard, get_ast
 )
 
 
-def query2path(query_ast: QueryStatement, model: List[UddlTuple] = None) -> List[ParticipantPath]:
+def get_model_attributes(model: List[UddlTuple], type_name: str) -> List[str]:
     """
-    Maps a UDDL Query (SELECT, FROM, JOIN) to a list of ParticipantPaths.
+    Finds all attribute rolenames for a given entity type from the model.
+    Attributes are identified by the 'composes' predicate.
+    """
+    attributes = set()
+    
+    for t in model:
+        if t.subject == type_name and t.predicate == 'composes':
+            attributes.add(t.rolename)
+            
+    return sorted(list(attributes))
+
+
+def query2path(query_ast: QueryStatement, model: List[UddlTuple] = None) -> Tuple[Dict[str, List[ParticipantPath]], List[ParticipantPath]]:
+    """
+    Maps a UDDL Query to (alias_map, projected_paths).
     """
     from_clause = query_ast.from_clause
     if not from_clause.entities:
-        return []
+        return {}, []
 
-    # The first entity in the FROM clause is the root (start_type)
     root_entity = from_clause.entities[0]
     start_type = root_entity.name
     root_alias = root_entity.alias or root_entity.name
 
-    # path_map stores the sequence of Resolutions to reach each entity alias
-    # Key: Alias, Value: List of Resolutions
-    path_map: Dict[str, List[Union[EntityResolution, AssociationResolution]]] = {root_alias: []}
+    alias_map: Dict[str, List[ParticipantPath]] = {root_alias: [ParticipantPath(start_type, [])]}
+    alias_types = {root_alias: start_type}
 
-    # Process joins to map out the graph of aliases
+    # 1. Build the JOIN graph (alias_map)
     for join in from_clause.joins:
         target_alias = join.target.alias or join.target.name
         target_type = join.target.name
+        alias_types[target_alias] = target_type
         
-        found_res = None
-        source_alias = None
-        
+        if target_alias not in alias_map:
+            alias_map[target_alias] = []
+
         for cond in join.on:
             left, right = cond.left, cond.right
-            # Helper to resolve alias from reference
-            def resolve_alias(ref):
-                if ref is None:
-                    return None
-                if ref.entity:
-                    return ref.entity
-                # If entity is None, characteristic might be the alias (implicit ID)
-                return ref.characteristic
-
-            left_alias = resolve_alias(left)
-
-            right_alias = resolve_alias(right)
             
-            # Check if operands refer to the Entity ID (alias itself)
-            def is_id_ref(ref):
-                if ref is None: return False
-                return ref.entity is None or ref.characteristic == 'id'
+            def is_identity(ref):
+                return ref is not None and (ref.characteristic is None or ref.characteristic == "")
 
-            left_is_id = is_id_ref(left)
-            right_is_id = is_id_ref(right)
+            left_alias = left.entity or root_alias
+            right_alias = right.entity if right else None
             
-            # Handle unary join conditions (implicit join on previous entity)
-            if right is None:
-                if left_alias in path_map:
-                    # Forward navigation: Source.role -> Target
-                    found_res = EntityResolution(left.characteristic)
-                    source_alias = left_alias
-                    break
-                # If left.entity refers to a known alias (not the target), treat as Source.role -> Target
-                if left.entity in path_map: 
-                     found_res = EntityResolution(left.characteristic)
-                     source_alias = left.entity
-                     break
-                
-                continue
+            found_res = None
+            source_alias = None
 
-            # Forward Navigation: Source.role = Target.id
-            if left_alias in path_map and right_alias == target_alias and right_is_id:
-                found_res = EntityResolution(left.characteristic)
-                source_alias = left_alias
-                break
-            if right_alias in path_map and left_alias == target_alias and left_is_id:
-                found_res = EntityResolution(right.characteristic)
-                source_alias = right_alias
-                break
-                
-            # Backward Navigation: Target.role = Source.id
-            if left_alias == target_alias and right_alias in path_map and right_is_id:
-                found_res = AssociationResolution(left.characteristic, target_type)
-                source_alias = right_alias
-                break
-            if right_alias == target_alias and left_alias in path_map and left_is_id:
-                found_res = AssociationResolution(right.characteristic, target_type)
-                source_alias = left_alias
-                break
+            if right is None: # Unary JOIN
+                source_alias, found_res = left_alias, EntityResolution(left.characteristic, target_type)
+            elif left_alias in alias_map and right_alias == target_alias and is_identity(right):
+                source_alias, found_res = left_alias, EntityResolution(left.characteristic, target_type)
+            elif right_alias in alias_map and left_alias == target_alias and is_identity(left):
+                source_alias, found_res = right_alias, EntityResolution(right.characteristic, target_type)
+            elif left_alias == target_alias and right_alias in alias_map and is_identity(right):
+                source_alias, found_res = right_alias, AssociationResolution(left.characteristic, target_type)
+            elif right_alias == target_alias and left_alias in alias_map and is_identity(left):
+                source_alias, found_res = left_alias, AssociationResolution(right.characteristic, target_type)
 
+            if found_res and source_alias in alias_map:
+                for parent_path in alias_map[source_alias]:
+                    new_path = ParticipantPath(start_type, list(parent_path.resolutions) + [found_res])
+                    if str(new_path) not in [str(p) for p in alias_map[target_alias]]:
+                        alias_map[target_alias].append(new_path)
 
-        if found_res and source_alias:
-            path_map[target_alias] = path_map[source_alias] + [found_res]
-
-
-
-    # Generate paths for each projected characteristic (the SELECT clause)
-    results = []
-
-    projections = list(query_ast.projections)
-    if projections and isinstance(projections[0], AllCharacteristics):
-        if model:
-            projections = []
-            
-            # Identify known Entities (Subjects in the model)
-            # This allows us to distinguish between Composition of an Entity vs an Observable
-            known_entities = {t.subject for t in model if isinstance(t, UddlTuple)}
-
-            # Look up all compositions in the start_type
-            for t in model:
-                if isinstance(t, UddlTuple) and t.subject == start_type and t.predicate == 'composes':
-                    # Only include if the target object is NOT an entity (i.e. it is an Observable)
-                    # Note: t.object is the type name of the composed element.
-                    target_type = str(t.object)
-                    if target_type not in known_entities:
-                        # Add projection for the composed rolename
-                        projections.append(ProjectedCharacteristic(
-                            Reference(entity=root_alias, characteristic=t.rolename)
-                        ))
-        else:
-             # Fallback if no model: path to root entity itself
-             results.append(ParticipantPath(start_type, path_map[root_alias]))
-             projections = [] # Skip the loop below
-
-    for proj in projections:
+    # 2. Build projected characteristic paths
+    projected_paths = []
+    for proj in query_ast.projections:
         if isinstance(proj, ProjectedCharacteristic):
             entity_ref = proj.reference.entity or root_alias
             attr = proj.reference.characteristic
+            if attr and entity_ref in alias_map:
+                for base in alias_map[entity_ref]:
+                    projected_paths.append(ParticipantPath(start_type, list(base.resolutions) + [EntityResolution(attr)]))
+        elif isinstance(proj, (AllCharacteristics, EntityWildcard)) and model:
+            target_alias = proj.entity if isinstance(proj, EntityWildcard) else root_alias
             
-            # Retrieve the steps to reach the entity, then append the final attribute
-            resolutions = path_map.get(entity_ref, []).copy()
-            resolutions.append(EntityResolution(attr)) 
-            results.append(ParticipantPath(start_type, resolutions))
-            
-    return results
-
-
-def path2query(paths: List[ParticipantPath], model: List[UddlTuple] = None) -> List[QueryStatement]:
-    """
-    Maps a list of ParticipantPaths back to a list of QueryStatements.
-    Paths are grouped by their start_type (root entity).
-    """
-    print(f"path2query: {paths}")
-    if not paths:
-        return []
-
-    # Group paths by their root entity (start_type)
-    grouped_paths = defaultdict(list)
-    for p in paths:
-        grouped_paths[p.start_type].append(p)
-
-    queries = []
-
-    for start_type, path_list in grouped_paths.items():
-        root_alias = start_type
-        # join_registry avoids duplicate JOINs for the same path segments
-        # Key: Tuple of resolutions (path prefix), Value: Alias name
-        join_registry: Dict[Tuple, str] = {(): root_alias}
-        joins: List[Join] = []
-        projections = []
-        alias_counter = 1
-
-        for p in path_list:
-            current_alias = root_alias
-            
-            # Process all resolutions except the terminal attribute
-            for i in range(len(p.resolutions) - 1):
-                res = p.resolutions[i]
-                path_prefix = tuple(p.resolutions[:i+1])
-                
-                if path_prefix not in join_registry:
-                    new_alias = f"t{alias_counter}"
-                    alias_counter += 1
-                    
-                    if isinstance(res, EntityResolution):
-                        # Forward: The source has a pointer to the target
-                        # JOIN Target AS tX ON current_alias.rolename = tX.id
-                        target_type = _resolve_target_type(model, current_alias, res.rolename, start_type, joins)
-                        
-                        # When joining on ID (identity), we use Reference(alias, None) which renders as just "alias"
-                        # The Equivalence.right side handles this by checking if right is None or right.characteristic is None
-                        # But Equivalence.__str__ handles printing.
-                        cond = Equivalence(Reference(current_alias, res.rolename), Reference(new_alias, None))
-
-                        joins.append(Join(Entity(target_type, new_alias), [cond]))
-                    else:
-                        # Backward: The target (Association) has a pointer to the source
-                        cond = Equivalence(Reference(new_alias, res.rolename), Reference(current_alias, None))
-                        joins.append(Join(Entity(res.association_name, new_alias), [cond]))
-
-                    
-                    join_registry[path_prefix] = new_alias
-                
-                current_alias = join_registry[path_prefix]
-
-            # The final resolution is the attribute to be SELECTed
-            leaf_res = p.resolutions[-1]
-            projections.append(ProjectedCharacteristic(Reference(current_alias, leaf_res.rolename)))
-
-        queries.append(QueryStatement(
-            projections=projections,
-            from_clause=FromClause([Entity(start_type)], joins)
-        ))
-
-    return queries
-
-
-def _resolve_target_type(model: List[UddlTuple], source_alias: str, rolename: str, root_type: str, joins: List[Join]) -> str:
-    """Helper to determine the entity type of a forward navigation step."""
-    if not model:
-        return rolename # Fallback to rolename if no model metadata exists
+            if target_alias in alias_map and target_alias in alias_types:
+                type_name = alias_types[target_alias]
+                attributes = get_model_attributes(model, type_name)
+                for attr in attributes:
+                    for base in alias_map[target_alias]:
+                        projected_paths.append(ParticipantPath(start_type, list(base.resolutions) + [EntityResolution(attr)]))
     
-    # 1. Determine the actual Type of the source_alias
-    source_type = root_type
-    for j in joins:
-        if j.target.alias == source_alias:
-            source_type = j.target.name
+    return alias_map, projected_paths
+
+
+def path2query(alias_map: Dict[str, List[ParticipantPath]], projected_paths: List[ParticipantPath], model: List[UddlTuple] = None) -> List[QueryStatement]:
+    """
+    Reconstructs QueryStatements from a mapping of aliases and terminal characteristic paths.
+    """
+    if not alias_map: return []
+
+    root_alias = next(k for k, v in alias_map.items() if any(len(p.resolutions) == 0 for p in v))
+    start_type = alias_map[root_alias][0].start_type
+    
+    joins = []
+    alias_type_tracker = {root_alias: start_type}
+    sorted_aliases = sorted(alias_map.keys(), key=lambda k: min(len(p.resolutions) for p in alias_map[k]))
+    
+    for alias in sorted_aliases:
+        if alias == root_alias: continue
+        target_type = _resolve_target_type(alias_map[alias], model, alias_type_tracker, root_alias)
+        alias_type_tracker[alias] = target_type
+        
+        equivalences = []
+        for p in alias_map[alias]:
+            prefix = p.resolutions[:-1]
+            try:
+                source_alias = next(k for k, v in alias_map.items() if any(list(p2.resolutions) == list(prefix) for p2 in v))
+                res = p.resolutions[-1]
+                if isinstance(res, EntityResolution):
+                    equivalences.append(Equivalence(Reference(source_alias, res.rolename), Reference(alias, None)))
+                else:
+                    equivalences.append(Equivalence(Reference(alias, res.rolename), Reference(source_alias, None)))
+            except StopIteration: continue
+        joins.append(Join(Entity(target_type, alias), equivalences))
+
+    # Reconstruct projections (Ensuring only characteristics are selected)
+    projections = []
+    for p in projected_paths:
+        prefix = p.resolutions[:-1]
+        try:
+            source_alias = next(k for k, v in alias_map.items() if any(list(p2.resolutions) == list(prefix) for p2 in v))
+            projections.append(ProjectedCharacteristic(Reference(source_alias, p.resolutions[-1].rolename)))
+        except StopIteration: continue
+
+    return [QueryStatement(projections, FromClause([Entity(start_type, root_alias)], joins))]
+
+
+def _resolve_target_type(paths: List[ParticipantPath], model: List[UddlTuple], type_tracker: Dict[str, str], root_alias: str) -> str:
+    """Uses model lookups to find the object type of a rolename."""
+    last_res = paths[0].resolutions[-1]
+    if isinstance(last_res, AssociationResolution):
+        return last_res.association_name
+    
+    if isinstance(last_res, EntityResolution) and last_res.target_type:
+        return last_res.target_type
+
+    if not model:
+        return last_res.rolename
+
+    # Find parent alias and its type
+    prefix = paths[0].resolutions[:-1]
+    source_type = None
+    for alias, known_type in type_tracker.items():
+        # This is a bit expensive but precise: find which alias this path came from
+        if not prefix and alias == root_alias:
+            source_type = known_type
             break
+    
+    if source_type:
+        for t in model:
+            if t.subject == source_type and t.rolename == last_res.rolename:
+                obj = str(t.object)
+                return obj.split('.')[0] if '.' in obj else obj
             
-    # 2. Find the tuple in the model where this type has this rolename
-    for t in model:
-        if t.subject == source_type and t.rolename == rolename:
-            obj = str(t.object)
-            if '.' in obj:
-                 # If object is a path (e.g. Louver_PartOf_Frame.part), it typically refers to a participant 
-                 # in another association. To navigate through it, we land on the Association entity (the root).
-                 # So we return the first segment.
-                 segments = obj.split('.')
-                 return segments[0]
-                 
-            return obj
-            
-    return rolename
+    return last_res.rolename
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Convert between UDDL queries and Participant Paths.")
-    parser.add_argument("input", nargs="*", help="UDDL query string OR list of Participant path strings")
-    parser.add_argument("--model", help="Path to UDDL model file (.face) or tuple file (.txt)")
+    parser = argparse.ArgumentParser(description="UDDL Query/Path Conversion")
+    parser.add_argument("input", nargs="*", help="Query or Paths")
+    parser.add_argument("--model", help="Path to .face or tuple file")
+    parser.add_argument("--alias-map", action="append", help="Define alias mapping (e.g. 'alias=path1,path2')")
 
     args = parser.parse_args()
 
-    # Load model if provided
     model_tuples = []
     if args.model:
-        model_path = pathlib.Path(args.model)
-        if not model_path.exists():
-             print(f"Error: Model file not found: {model_path}", file=sys.stderr)
-             sys.exit(1)
-        
-        # Check extension
-        if model_path.suffix.lower() == '.face' or model_path.suffix.lower() == '.xml':
-             try:
-                 tree = ET.parse(model_path)
-                 loaded = uddl2tuple(tree)
-                 if loaded:
-                      model_tuples = [t for t in loaded if isinstance(t, UddlTuple)]
-             except Exception as e:
-                 print(f"Error parsing UDDL model: {e}", file=sys.stderr)
-                 sys.exit(1)
+        p = pathlib.Path(args.model)
+        if p.suffix.lower() in ['.face', '.xml']:
+            model_tuples = [t for t in uddl2tuple(ET.parse(p)) if isinstance(t, UddlTuple)]
         else:
-             # Assume tuple file
-             try:
-                 loaded = parse_tuple(model_path)
-                 if loaded:
-                      model_tuples = [t for t in loaded if isinstance(t, UddlTuple)]
-             except Exception as e:
-                 print(f"Error parsing tuple model: {e}", file=sys.stderr)
-                 sys.exit(1)
+            model_tuples = [t for t in parse_tuple(p) if isinstance(t, UddlTuple)]
 
-    # Heuristic detection of input type
-    is_query = False
-    input_data = args.input
-    
-    if input_data:
-        # Check if the first argument looks like the start of a query
-        first_arg = input_data[0].strip().upper()
-        if first_arg == "SELECT" or first_arg.startswith("SELECT "):
-            is_query = True
-
-        if is_query:
-            # Join all arguments to form the query string
-            query_str = " ".join(input_data)
-            try:
-                ast = get_ast(query_str)
-                paths = query2path(ast, model=model_tuples)
-                for p in paths:
-                    print(str(p))
-            except Exception as e:
-                print(f"Error processing query: {e}", file=sys.stderr)
-                sys.exit(1)
-        else:
-            # Treat as list of paths
-            try:
-                parsed_paths = []
-                for p_str in input_data:
-                    parsed_paths.append(ParticipantPath.parse(p_str))
-                
-                queries = path2query(parsed_paths, model=model_tuples)
-                
-                def print_query(q):
-                    print("Query:")
-                    print(q)
-                
-                if isinstance(queries, list):
-                    for q in queries:
-                        print_query(q)
-                else:
-                    print_query(queries)
-                    
-            except Exception as e:
-                print(f"Error processing paths: {e}", file=sys.stderr)
-                sys.exit(1)
-
-    else:
-        # Default behavior if no arguments provided
-        # Simulate a query: SELECT A.x, B.y FROM A JOIN B ON A.link = B
-        # Recreate the sample_ast using classes
-        
-        sample_ast = QueryStatement(
-            projections=[
-                ProjectedCharacteristic(reference=Reference(entity="A", characteristic="x")),
-                ProjectedCharacteristic(reference=Reference(entity="B", characteristic="y"))
-            ],
-            from_clause=FromClause(
-                entities=[Entity(name="A", alias="A")],
-                joins=[
-                    Join(
-                        target=Entity(name="B", alias="B"),
-                        on=[Equivalence(
-                            left=Reference(entity="A", characteristic="link"),
-                            right=Reference(entity="B", characteristic="id")
-                        )]
-                    )
-                ]
-            ),
-            qualifier=None
-        )
-
-        paths = query2path(sample_ast, model=model_tuples)
-        print("Query to Paths:")
-        for p in paths:
-            print(f"  {p}")
-
-        reconstructed_query = path2query(paths, model=model_tuples)
-        if isinstance(reconstructed_query, list):
-            reconstructed_query = reconstructed_query[0]
+    if args.input or args.alias_map:
+        if args.input and args.input[0].upper().startswith("SELECT"):
+            alias_map, projected_paths = query2path(query_ast=get_ast(" ".join(args.input)), model=model_tuples)
+            print("\nAlias Map:")
+            for alias, paths in alias_map.items():
+                print(f"  {alias}: {[str(p) for p in paths]}")
             
-        print("\nPaths back to Query (Projections):")
-        if reconstructed_query:
-            for proj in reconstructed_query.projections:
-                if isinstance(proj, ProjectedCharacteristic):
-                    print(f"  {proj.reference}")
-                else:
-                    print(f"  {proj}")
+            print("\nProjected Paths:")
+            for p in projected_paths:
+                print(f"  {str(p)}")
+        else:
+            # Assumes multiple paths correspond to one aliased entity
+            projected_paths = [ParticipantPath.parse(p) for p in args.input]
+            
+            if args.alias_map:
+                alias_map = {}
+                for mapping in args.alias_map:
+                    if '=' in mapping:
+                        alias, paths_str = mapping.split('=', 1)
+                        paths_list = [ParticipantPath.parse(p.strip()) for p in paths_str.split(',')]
+                        alias_map[alias.strip()] = paths_list
+            else:
+                alias_map = {"target": projected_paths}
 
+            queries = path2query(alias_map=alias_map, projected_paths=projected_paths, model=model_tuples)
+            print("\nReconstructed:")
+            for q in queries:
+                print(q)
+    else:
+        # Example: Diamond Join
+        q = "SELECT d FROM A JOIN B ON A.b JOIN C ON A.c JOIN D ON D.b_ref = B AND D.c_ref = C"
+        print("Demo Query:")
+        print(q)
+        print()
+        alias_map, projected_paths = query2path(query_ast=get_ast(q))
+        print("\nAlias Map:")
+        for alias, paths in alias_map.items():
+            print(f"  {alias}: {[str(p) for p in paths]}")
+            
+        print("\nProjected Paths:")
+        for p in projected_paths:
+            print(f"  {str(p)}")
+        print()
+        print("Reconstructed:")
+        for q in path2query(alias_map=alias_map, projected_paths=projected_paths):
+            print(q)
+        print()
