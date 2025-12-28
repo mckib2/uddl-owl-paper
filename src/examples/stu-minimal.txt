@@ -1,0 +1,35 @@
+(A, composes, Identifier,)
+(A, composes, B, b)
+
+(B, composes, Identifier,)
+(B, composes, A, a)
+
+(C, composes, Identifier,)
+(C, composes, A, a)
+(C, composes, B, b)
+
+(D, composes, Identifier,)
+(D, composes, Observable, x)
+(D, composes, B, b)
+(D, composes, C, c)
+
+SELECT b_in_A.id, b_in_C.id, b_thro_C.id
+FROM A as a_from
+JOIN B as b_in_A on a_from.b
+JOIN C as just_c on just_c.a = a_from
+JOIN B as b_in_C on just_c.b
+JOIN A as a_thro_C on just_c.a
+JOIN B as b_thro_C on a_thro_C.b;
+
+SELECT D.x
+FROM A
+JOIN B on B.a = A
+JOIN C on C.a = A
+JOIN D on D.b = B and D.c = C;
+
+SELECT D.x
+FROM A
+JOIN B on B.a = A
+JOIN C on C.a = A
+JOIN D as D1 on D1.b = B
+JOIN D as D2 on D2.c = C;

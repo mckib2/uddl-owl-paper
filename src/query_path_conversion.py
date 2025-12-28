@@ -46,6 +46,39 @@ from query_parser import (
 )
 
 
+class PathUnion:
+    """
+    Represents a union of multiple possible paths for a single projection.
+    Used when an alias has multiple paths (e.g., due to AND joins) and we want
+    to indicate that any of these paths could be chosen.
+    """
+    def __init__(self, paths: List[ParticipantPath]):
+        if not paths:
+            raise ValueError("PathUnion requires at least one path")
+        self.paths = paths
+    
+    def __str__(self) -> str:
+        if len(self.paths) == 1:
+            return str(self.paths[0])
+        return "{" + " | ".join(str(p) for p in self.paths) + "}"
+    
+    def __repr__(self) -> str:
+        return f"PathUnion({[repr(p) for p in self.paths]})"
+    
+    def __eq__(self, other):
+        if isinstance(other, PathUnion):
+            return self.paths == other.paths
+        return False
+    
+    def __hash__(self):
+        # Use string representations since ParticipantPath may not be hashable
+        return hash(tuple(str(p) for p in self.paths))
+
+
+# Type alias for projected paths: can be a single path or a union of paths
+ProjectedPath = Union[ParticipantPath, PathUnion]
+
+
 def get_model_attributes(model: List[UddlTuple], type_name: str) -> List[str]:
     """
     Finds all attribute rolenames for a given entity type from the model.
@@ -60,9 +93,15 @@ def get_model_attributes(model: List[UddlTuple], type_name: str) -> List[str]:
     return sorted(list(attributes))
 
 
-def query2path(query_ast: QueryStatement, model: List[UddlTuple] = None) -> Tuple[Dict[str, List[ParticipantPath]], List[ParticipantPath]]:
+def query2path(query_ast: QueryStatement, model: List[UddlTuple] = None) -> Tuple[Dict[str, List[ParticipantPath]], List[ProjectedPath]]:
     """
     Maps a UDDL Query to (alias_map, projected_paths).
+    
+    Returns:
+        alias_map: Maps alias names to lists of paths that reach that alias
+        projected_paths: List of projected paths. Each element is either:
+            - A single ParticipantPath (when there's one unique path)
+            - A PathUnion (when multiple paths exist for the same projection, e.g., AND joins)
     """
     from_clause = query_ast.from_clause
     if not from_clause.entities:
@@ -115,13 +154,56 @@ def query2path(query_ast: QueryStatement, model: List[UddlTuple] = None) -> Tupl
 
     # 2. Build projected characteristic paths
     projected_paths = []
+
     for proj in query_ast.projections:
         if isinstance(proj, ProjectedCharacteristic):
             entity_ref = proj.reference.entity or root_alias
             attr = proj.reference.characteristic
-            if attr and entity_ref in alias_map:
-                for base in alias_map[entity_ref]:
-                    projected_paths.append(ParticipantPath(start_type, list(base.resolutions) + [EntityResolution(attr)]))
+            
+            if not attr:
+                continue
+            
+            # Step A: Find the target alias(es)
+            target_aliases = []
+            if entity_ref in alias_map:
+                target_aliases = [entity_ref]
+            else:
+                # Case 2: Reference by Type Name instead of Alias
+                # Check which aliases in the map are actually of this type
+                for alias_name, paths in alias_map.items():
+                    if alias_name in alias_types:
+                        # Use the alias_types dictionary if available (more efficient)
+                        if alias_types[alias_name] == entity_ref:
+                            target_aliases.append(alias_name)
+                    elif paths:
+                        # Fallback: determine type from path
+                        if _get_alias_type(paths[0], model) == entity_ref:
+                            target_aliases.append(alias_name)
+
+            # Step B: Generate paths for this projection
+            # Collect all possible paths across all matching aliases
+            all_paths_for_projection = []
+            seen_path_strings = set()
+            
+            for t_alias in target_aliases:
+                # For Case 1: Collect ALL paths for this alias (not just the first)
+                # This represents the union of possible paths due to AND joins
+                for base_path in alias_map[t_alias]:
+                    full_path = ParticipantPath(start_type, list(base_path.resolutions) + [EntityResolution(attr)])
+                    path_str = str(full_path)
+                    if path_str not in seen_path_strings:
+                        all_paths_for_projection.append(full_path)
+                        seen_path_strings.add(path_str)
+            
+            # Add the projection: use PathUnion if multiple paths, single path otherwise
+            if len(all_paths_for_projection) == 0:
+                continue  # Skip if no paths found
+            elif len(all_paths_for_projection) == 1:
+                projected_paths.append(all_paths_for_projection[0])
+            else:
+                # Case 1: Multiple paths - return as union
+                projected_paths.append(PathUnion(all_paths_for_projection))
+                    
         elif isinstance(proj, (AllCharacteristics, EntityWildcard)) and model:
             target_alias = proj.entity if isinstance(proj, EntityWildcard) else root_alias
             
@@ -129,15 +211,36 @@ def query2path(query_ast: QueryStatement, model: List[UddlTuple] = None) -> Tupl
                 type_name = alias_types[target_alias]
                 attributes = get_model_attributes(model, type_name)
                 for attr in attributes:
-                    for base in alias_map[target_alias]:
-                        projected_paths.append(ParticipantPath(start_type, list(base.resolutions) + [EntityResolution(attr)]))
+                    # Collect all paths for this attribute (Case 1: handle multiple paths)
+                    all_paths_for_attr = []
+                    seen_path_strings = set()
+                    
+                    for base_path in alias_map[target_alias]:
+                        full_path = ParticipantPath(start_type, list(base_path.resolutions) + [EntityResolution(attr)])
+                        path_str = str(full_path)
+                        if path_str not in seen_path_strings:
+                            all_paths_for_attr.append(full_path)
+                            seen_path_strings.add(path_str)
+                    
+                    # Add the projection: use PathUnion if multiple paths
+                    if len(all_paths_for_attr) == 0:
+                        continue
+                    elif len(all_paths_for_attr) == 1:
+                        projected_paths.append(all_paths_for_attr[0])
+                    else:
+                        projected_paths.append(PathUnion(all_paths_for_attr))
     
     return alias_map, projected_paths
 
 
-def path2query(alias_map: Dict[str, List[ParticipantPath]], projected_paths: List[ParticipantPath], model: List[UddlTuple] = None) -> List[QueryStatement]:
+def path2query(alias_map: Dict[str, List[ParticipantPath]], projected_paths: List[ProjectedPath], model: List[UddlTuple] = None) -> List[QueryStatement]:
     """
     Reconstructs QueryStatements from a mapping of aliases and terminal characteristic paths.
+    
+    Args:
+        alias_map: Maps alias names to lists of paths
+        projected_paths: List of projected paths (can be ParticipantPath or PathUnion)
+        model: Optional model for type resolution
     """
     if not alias_map: return []
 
@@ -266,15 +369,57 @@ def path2query(alias_map: Dict[str, List[ParticipantPath]], projected_paths: Lis
         joins.append(Join(Entity(target_type, alias), equivalences))
 
     # Reconstruct projections (Ensuring only characteristics are selected)
+    # For PathUnion, we use all paths in the union (they represent alternative ways to reach the same data)
     projections = []
-    for p in projected_paths:
-        prefix = p.resolutions[:-1]
-        try:
-            source_alias = next(k for k, v in alias_map.items() if any(list(p2.resolutions) == list(prefix) for p2 in v))
-            projections.append(ProjectedCharacteristic(Reference(source_alias, p.resolutions[-1].rolename)))
-        except StopIteration: continue
+    for proj_path in projected_paths:
+        # Handle both single paths and unions
+        paths_to_process = proj_path.paths if isinstance(proj_path, PathUnion) else [proj_path]
+        
+        for p in paths_to_process:
+            prefix = p.resolutions[:-1]
+            try:
+                source_alias = next(k for k, v in alias_map.items() if any(list(p2.resolutions) == list(prefix) for p2 in v))
+                projections.append(ProjectedCharacteristic(Reference(source_alias, p.resolutions[-1].rolename)))
+            except StopIteration: continue
 
     return [QueryStatement(projections, FromClause([Entity(start_type, root_alias)], joins))]
+
+
+def _get_alias_type(path: ParticipantPath, model: List[UddlTuple] = None) -> str:
+    """Helper to determine the entity type of a path's terminal node."""
+    if not path.resolutions:
+        return path.start_type
+    
+    last = path.resolutions[-1]
+    if isinstance(last, AssociationResolution):
+        return last.association_name
+    
+    # If EntityResolution has a target_type, use it
+    if isinstance(last, EntityResolution) and last.target_type:
+        return last.target_type
+    
+    # Otherwise, we need to look up in the model
+    # To do this, we need the source type (parent type)
+    if not path.resolutions:
+        return path.start_type
+    
+    # Get the parent type by resolving up to the second-to-last resolution
+    if len(path.resolutions) == 1:
+        source_type = path.start_type
+    else:
+        # Recursively get the type of the parent path
+        parent_path = ParticipantPath(path.start_type, path.resolutions[:-1])
+        source_type = _get_alias_type(parent_path, model)
+    
+    # Look up the rolename in the model
+    if model:
+        for t in model:
+            if t.subject == source_type and t.rolename == last.rolename:
+                obj = str(t.object)
+                return obj.split('.')[0] if '.' in obj else obj
+    
+    # Fallback to rolename
+    return last.rolename
 
 
 def _resolve_target_type(paths: List[ParticipantPath], model: List[UddlTuple], source_type: str = None) -> str:
