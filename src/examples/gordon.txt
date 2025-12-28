@@ -1,11 +1,12 @@
 (AirSystem, composes, Identifier,)
-(AirSystem, composes AirFrame, airframe)
+(AirSystem, composes, AirFrame, airFrame)
 (AirSystem, composes, NavigationSystem, navSystem)
+(AirSystem, composes, ControlSystem, controlSystem)
 
 (AirFrame, composes, Identifier,)
-(Airframe, composes, Position, pos)
-(Airframe, composes, Velocity, vel)
-(Airframe, composes, Acceleration, accel)
+(AirFrame, composes, Position, pos)
+(AirFrame, composes, Velocity, vel)
+(AirFrame, composes, Acceleration, accel)
 
 (NavigationSystem, composes, Identifier,)
 (NavigationSystem, composes, Position, pos)
@@ -16,6 +17,16 @@
 (Observe, composes, Validity, validity)
 (Observe, associates[1, 1][1, 1], AirFrame, observed)
 (Observe, associates[1, 1][1, 1], NavigationSystem, observer)
+
+(ControlSystem, composes, Identifier,)
+(ControlSystem, composes, Position, pos)
+(ControlSystem, composes, Mode, mode)
+
+(Control, composes, Identifier,)
+(Control, composes, CalendarTime, time)
+(Control, composes, Validity, validity)
+(Control, associates[1, 1][1, 1], ControlSystem, controller)
+(Control, associates[1, 1][1, 1], AirFrame, controlled)
 
 SELECT AirFrame.pos, NavigationSystem.mode, Observe.validity
 FROM AirSystem

@@ -86,6 +86,49 @@ class QueryStatement:
         q = f" {self.qualifier}" if self.qualifier else ""
         return f"SELECT{q} {', '.join(str(p) for p in self.projections)} {self.from_clause}"
 
+    def pretty_print(self, indent: int = 0) -> str:
+        """Pretty-prints the query with readable indentation."""
+        indent_str = " " * indent
+        lines = []
+        
+        # SELECT clause
+        select_parts = ["SELECT"]
+        if self.qualifier:
+            select_parts.append(self.qualifier)
+        select_base = " ".join(select_parts)
+        
+        # Projections with proper indentation
+        if len(self.projections) == 1:
+            lines.append(f"{select_base} {str(self.projections[0])}")
+        else:
+            # Multi-line projections
+            for i, proj in enumerate(self.projections):
+                if i == 0:
+                    lines.append(f"{select_base} {proj},")
+                else:
+                    prefix = " " * (len(select_base) + 1)
+                    suffix = "," if i < len(self.projections) - 1 else ""
+                    lines.append(f"{prefix}{proj}{suffix}")
+        
+        # FROM clause
+        from_line = f"FROM {', '.join(str(e) for e in self.from_clause.entities)}"
+        lines.append(from_line)
+        
+        # JOIN clauses with indentation
+        for join in self.from_clause.joins:
+            join_line = f"JOIN {join.target}"
+            lines.append(join_line)
+            
+            # ON clause with conditions
+            if join.on:
+                for i, eq in enumerate(join.on):
+                    if i == 0:
+                        lines.append(f"    ON {eq}")
+                    else:
+                        lines.append(f"    AND {eq}")
+        
+        return "\n".join(f"{indent_str}{line}" for line in lines)
+
 class UDDLQueryParser:
     def __init__(self, query_text):
         self.tokens = self._tokenize(query_text)
