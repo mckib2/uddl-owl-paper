@@ -283,6 +283,15 @@ def _reconstruct_alias_map(
     return alias_map
 
 
+def load_model(model_path: str) -> List[UddlTuple]:
+    """Loads a model from a file."""
+    p = pathlib.Path(model_path)
+    if p.suffix.lower() in ['.face', '.xml']:
+        return [t for t in uddl2tuple(ET.parse(p)) if isinstance(t, UddlTuple)]
+    else:
+        return [t for t in parse_tuple(p) if isinstance(t, UddlTuple)]
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="UDDL Query/Path Conversion")
     parser.add_argument("input", nargs="*", help="Query or Paths")
@@ -290,14 +299,7 @@ if __name__ == "__main__":
     parser.add_argument("--and-join", action="append", help="Explicit alias mapping, e.g. 'D:path1,path2'")
 
     args = parser.parse_args()
-
-    model_tuples = []
-    if args.model:
-        p = pathlib.Path(args.model)
-        if p.suffix.lower() in ['.face', '.xml']:
-            model_tuples = [t for t in uddl2tuple(ET.parse(p)) if isinstance(t, UddlTuple)]
-        else:
-            model_tuples = [t for t in parse_tuple(p) if isinstance(t, UddlTuple)]
+    model_tuples = load_model(model_path=args.model)
 
     if args.input or args.and_join:
         if args.input and args.input[0].upper().startswith("SELECT"):
