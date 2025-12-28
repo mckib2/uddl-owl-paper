@@ -90,3 +90,29 @@ class ParticipantPath:
 
     def __repr__(self) -> str:
         return f"ParticipantPath(start_type='{self.start_type}', resolutions={self.resolutions})"
+
+
+if __name__ == "__main__":
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser(description="Parse a UDDL participant path.")
+    parser.add_argument("path", help="The participant path string to parse")
+
+    args = parser.parse_args()
+
+    try:
+        path = ParticipantPath.parse(args.path)
+        print(f"Parsed: {path}")
+        print("\nBreakdown:")
+        print(f"  Start: {path.start_type}")
+        for i, res in enumerate(path.resolutions):
+            if isinstance(res, EntityResolution):
+                print(f"  Step {i+1}: Entity Resolution (. {res.rolename})")
+                if res.target_type:
+                    print(f"    Target Type: {res.target_type}")
+            elif isinstance(res, AssociationResolution):
+                print(f"  Step {i+1}: Association Resolution (-> {res.rolename}[{res.association_name}])")
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)

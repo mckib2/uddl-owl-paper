@@ -30,9 +30,7 @@ The alias map is primarily used to solve two problems in the translation process
 """
 
 from typing import List, Union, Dict, Tuple
-from collections import defaultdict
 import argparse
-import sys
 import pathlib
 import xml.etree.ElementTree as ET
 
@@ -67,12 +65,12 @@ class PathUnion:
     
     def __eq__(self, other):
         if isinstance(other, PathUnion):
-            return self.paths == other.paths
+            return set(str(p) for p in self.paths) == set(str(p) for p in other.paths)
         return False
     
     def __hash__(self):
         # Use string representations since ParticipantPath may not be hashable
-        return hash(tuple(str(p) for p in self.paths))
+        return hash(frozenset(str(p) for p in self.paths))
 
 
 # Type alias for projected paths: can be a single path or a union of paths

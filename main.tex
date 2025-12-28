@@ -429,7 +429,7 @@ TODO: check Regularity Violations and how that compares to what you're allowed t
 The UDDL query language is primarily a Selection and Projection language.  It traverses the graph through a \texttt{JOIN} mechanism and selects Observables.  We convert the restricted form of the UDDL Query Specification described in section \ref{section:query_construction} to a SPARQL Query using a two-step transformation described in the following subsections.  This process utilizes an intermediate \textit{Alias Map} to bridge the gap between relational join semantics and graph-based triple patterns.
 
 \subsubsection{UDDL Query Specification AST to Alias Map}
-The initial phase traverses the UDDL Query specification Abstract Syntax Tree (AST) to resolve all navigational steps into flattened Participant Paths (the same form used for Association participants).  During this traversal, an Alias Map ($ \mathcal{M} $) is constructed, where each key represents a unique entity alias $ a $ and the value is a set of paths $ \mathcal{P} $ reaching that entity.
+The initial phase traverses the UDDL Query specification Abstract Syntax Tree (AST) to resolve all navigational steps into flattened Participant Paths (the same form used for Association participants).  During this traversal, an Alias Map ($ \mathcal{M} $) is constructed, where each key represents a unique entity alias $ a $ and the value is a set of paths $ \mathcal{P} $ reaching that entity.  In the case of a ``diamond join'' or complex convergence, multiple paths reaching the same alias are unified.  This flattening ensures that relational identity is preserved as a single graph node, even when multiple navigational routes exist to reach that node.
 
 \begin{table*}[t]
 \centering
@@ -440,23 +440,21 @@ The initial phase traverses the UDDL Query specification Abstract Syntax Tree (A
     \rowcolor{tableheader}
     \textbf{\headingfont UDDL Component} & \textbf{\headingfont Logical Representation} & \textbf{\headingfont Graph Result} \\
     \addlinespace[4pt]
-    \texttt{FROM Entity AS a} & Root Node Construction & Root Variable $?a$ \\
+    \texttt{FROM Entity AS a} & Root Node Construction & Root Variable $ ?a $ \\
     \addlinespace[4pt]
-    \texttt{JOIN Target AS b ON a.role} & Forward Navigation & Path Segment $(a \xrightarrow{role} b)$ \\
+    \texttt{JOIN Target AS b ON a.role} & Forward Navigation & Path Segment $ (a \xrightarrow{role} b) $ \\
     \addlinespace[4pt]
-    \texttt{JOIN Target AS b ON b.role = a} & Backward Navigation & Path Segment $(b \xrightarrow{role} a)$ \\
+    \texttt{JOIN Target AS b ON b.role = a} & Backward Navigation & Path Segment $ (b \xrightarrow{role} a) $ \\
     \addlinespace[4pt]
-    \texttt{AND Expression} & Path Convergence & Multiple paths for Alias $b$ \\
+    \texttt{AND Expression} & Path Convergence & Multiple paths for Alias $ b $ \\
     \bottomrule
 \end{tabularx}
 \end{table*}
 
-
-
 \subsubsection{Alias Map to SPARQL Triples}
-In the second phase, the Alias Map is lowered into SPARQL Triple Patterns.  Because the Alias Map has already unified converging paths into a single identifier, the resulting SPARQL query implicitly enforces join constraints through variable name re-use.  Entries of the Alias Map are converted into triples using the following definition:
+In the second phase, the Alias Map is lowered into SPARQL Triple Patterns.  Because the Alias Map has already unified converging paths into a single identifier, the resulting SPARQL query implicitly enforces join constraints through variable name re-use.  While the intermediate Participant Paths may suggest a union of routes, the re-use of a single SPARQL variable for an alias ensures a graph pattern match that enforces intersection rather than a simply selecting either path.  Entries of the Alias Map are converted into triples using the following definition:
 \begin{equation}
-\forall a \in \mathcal{M}, \forall p \in \mathcal{P}_a: \text{Triple}(source(p), leaf\_role(p), a)
+\forall a \in \mathcal{M}, \forall p \in \mathcal{P}_a: (\operatorname{source}(p), \operatorname{leaf\_role}(p), a) \text{.}
 \end{equation}.
 
 The mapping between these structures is summarized in Table \ref{table:sparql_transformation}.

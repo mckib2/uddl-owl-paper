@@ -1,7 +1,7 @@
 import re
-import argparse
 from dataclasses import dataclass
 from typing import List, Optional, Union
+
 
 @dataclass(frozen=True)
 class Reference:
@@ -13,6 +13,7 @@ class Reference:
              return f"{self.entity}.{self.characteristic}"
         return self.entity or self.characteristic or ""
 
+
 @dataclass(frozen=True)
 class ProjectedCharacteristic:
     reference: Reference
@@ -21,10 +22,12 @@ class ProjectedCharacteristic:
     def __str__(self) -> str:
         return f"{self.reference}{f' AS {self.alias}' if self.alias else ''}"
 
+
 @dataclass(frozen=True)
 class AllCharacteristics:
     def __str__(self) -> str:
         return "*"
+
 
 @dataclass(frozen=True)
 class EntityWildcard:
@@ -33,7 +36,9 @@ class EntityWildcard:
     def __str__(self) -> str:
         return f"{self.entity}.*"
 
+
 Projection = Union[ProjectedCharacteristic, AllCharacteristics, EntityWildcard]
+
 
 @dataclass(frozen=True)
 class Entity:
@@ -45,6 +50,7 @@ class Entity:
             return f"{self.name} AS {self.alias}"
         return self.name
 
+
 @dataclass(frozen=True)
 class Equivalence:
     left: Reference
@@ -54,6 +60,7 @@ class Equivalence:
         if self.right:
             return f"{self.left} = {self.right}"
         return str(self.left)
+
 
 @dataclass(frozen=True)
 class Join:
@@ -128,6 +135,7 @@ class QueryStatement:
                         lines.append(f"    AND {eq}")
         
         return "\n".join(f"{indent_str}{line}" for line in lines)
+
 
 class UDDLQueryParser:
     def __init__(self, query_text):
@@ -263,3 +271,20 @@ class UDDLQueryParser:
 
 def get_ast(query_string):
     return UDDLQueryParser(query_string).parse()
+
+
+if __name__ == "__main__":
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser(description="Parse and pretty-print a UDDL query.")
+    parser.add_argument("query", help="The UDDL query string to parse")
+
+    args = parser.parse_args()
+
+    try:
+        ast = get_ast(args.query)
+        print(ast.pretty_print())
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
