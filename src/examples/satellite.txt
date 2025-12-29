@@ -10,7 +10,7 @@
 
 (Sensor, composes, Identifier,)
 
-(TemperatureSensor, specializes, Temperature,)
+(TemperatureSensor, specializes, Sensor,)
 (TemperatureSensor, composes, Identifier,)
 
 (TemperatureSensor_Observe_LouverFrame, composes, Identifier,)

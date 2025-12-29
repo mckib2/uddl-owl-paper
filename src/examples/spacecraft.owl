@@ -1,0 +1,242 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#"
+     xml:base="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:spacecraft="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#">
+    <owl:Ontology rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#assembly -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#assembly">
+        <owl:inverseOf rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#part"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Component"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#System"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#observedPart -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#observedPart">
+        <owl:inverseOf rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#observer"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Sensor"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Component"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#observer -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#observer">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Component"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Sensor"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#part -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#part">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#System"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Component"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Data properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Angle -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Angle">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Blade"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#HealthState -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#HealthState">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Louver"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Identifier -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Identifier">
+        <rdfs:domain rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#RadiantIntensity -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#RadiantIntensity">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Blade"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Temperature -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Temperature">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Frame"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Blade -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Blade">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Component"/>
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Frame"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Component -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Component"/>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Frame -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Frame">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Component"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Louver -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Louver">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#System"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#PositionSensor -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#PositionSensor">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Sensor"/>
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#TemperatureSensor"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Sensor -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Sensor"/>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#System -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#System"/>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#TemperatureSensor -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#TemperatureSensor">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Sensor"/>
+    </owl:Class>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Individuals
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#blade1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#blade1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Blade"/>
+        <assembly rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#louver1"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#frame1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#frame1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Frame"/>
+        <assembly rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#louver1"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#louver1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#louver1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#Louver"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#posSensor1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#posSensor1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#PositionSensor"/>
+        <observedPart rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#blade1"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#tempSensor1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#tempSensor1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#TemperatureSensor"/>
+        <observedPart rdf:resource="http://www.semanticweb.org/joe/ontologies/2025/11/spacecraft#frame1"/>
+    </owl:NamedIndividual>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi -->
+

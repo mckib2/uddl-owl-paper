@@ -35,7 +35,7 @@ def uddl2owl(uddl_file: pathlib.Path, output_file: pathlib.Path = None) -> None:
 
     tree = ET.ElementTree(owl_doc.getroot())
     ET.indent(tree, space="\t", level=0)
-    xml_string = ET.tostring(tree.getroot(), encoding='utf-8').decode('utf-8')
+    xml_string = ET.tostring(tree.getroot(), encoding='utf-8', xml_declaration=True).decode('utf-8')
 
     if output_file is not None:
         if not output_file.parent.exists():
