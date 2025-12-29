@@ -1,14 +1,16 @@
 import argparse
 from typing import List, Dict
 
-from query_path_conversion import query2path, load_model, PathUnion, ProjectedPath
+from query_path_conversion import query2path, load_model, PathUnion, ProjectedPath, _get_alias_type
 from query_parser import get_ast
 from participant_path_parser import ParticipantPath, EntityResolution
 from tuple2owl import NS_DEFAULT
+from tuple import UddlTuple
 
 
 def generate_sparql(alias_map: Dict[str, List[ParticipantPath]], 
                     projected_paths: List[ProjectedPath], 
+                    model: List[UddlTuple] = None,
                     namespace: str = NS_DEFAULT) -> str:
     """
     Translates an Alias Map and Projected Paths into a SPARQL SELECT query.
@@ -21,7 +23,24 @@ def generate_sparql(alias_map: Dict[str, List[ParticipantPath]],
     # Track which triples we've already added to avoid duplicates in the graph
     seen_triples = set()
 
-    # 1. Process the Alias Map to build the graph structure (JOINs)
+    # 1. Resolve Types for all Aliases
+    # We use the _get_alias_type helper from query_path_conversion
+    alias_to_type = {}
+    for alias, paths in alias_map.items():
+        # Any path in the list for this alias will resolve to the same type
+        # We use the first path as representative
+        if paths:
+            alias_to_type[alias] = _get_alias_type(paths[0], model)
+        else:
+            alias_to_type[alias] = "Unknown"
+
+    # 2. Inject rdf:type triples for all aliases
+    # This ensures ?alias is linked to :ActualTypeName (e.g., ?t1 a :TemperatureSensor)
+    for alias, type_name in alias_to_type.items():
+        type_triple = f"  ?{alias} a :{type_name} ."
+        where_clauses.append(type_triple)
+
+    # 3. Process the Alias Map to build the graph structure (JOINs)
     # We sort by path length to ensure the root triples appear first
     sorted_aliases = sorted(alias_map.keys(), key=lambda k: min(len(p.resolutions) for p in alias_map[k]))
     
@@ -53,7 +72,7 @@ def generate_sparql(alias_map: Dict[str, List[ParticipantPath]],
                 where_clauses.append(triple)
                 seen_triples.add(triple)
 
-    # 2. Process Projected Paths (SELECT clause)
+    # 4. Process Projected Paths (SELECT clause)
     for i, proj in enumerate(projected_paths):
         if isinstance(proj, ParticipantPath):
             # Standard single-path projection
@@ -105,7 +124,7 @@ def generate_sparql(alias_map: Dict[str, List[ParticipantPath]],
                 union_pattern = "  " + " UNION ".join(union_branches) + " ."
                 where_clauses.append(union_pattern)
 
-    # 3. Assemble Query
+    # 5. Assemble Query
     sparql = f"PREFIX : <{namespace}>\n\n"
     sparql += f"SELECT {' '.join(sorted(list(select_vars)))}\n"
     sparql += "WHERE {\n"
@@ -134,6 +153,6 @@ if __name__ == "__main__":
     alias_map, projected_paths = query2path(query_ast=ast, model=model_tuples)
 
     # 3. Generate SPARQL
-    sparql_output = generate_sparql(alias_map=alias_map, projected_paths=projected_paths, namespace=args.ns)
+    sparql_output = generate_sparql(alias_map=alias_map, projected_paths=projected_paths, model=model_tuples, namespace=args.ns)
 
     print(sparql_output)
