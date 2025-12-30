@@ -60,3 +60,8 @@ SELECT
 FROM Louver louver_from
     JOIN Blade_PartOf_Louver blade_PartOf_Louver_join 
         ON blade_PartOf_Louver_join.assembly = louver_from;
+
+
+
+(Temperature, instance, TemperatureSensor->observer[TemperatureSensor_Observe_LouverFrame].observed.temperature, temperature_1)
+

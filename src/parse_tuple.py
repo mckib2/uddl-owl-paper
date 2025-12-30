@@ -81,8 +81,9 @@ def parse_tuple(tuple_file: pathlib.Path) -> List[Union[UddlTuple, QueryStatemen
                 if current_part:
                     parts.append(''.join(current_part).strip())
                 
-                # Remove empty strings from trailing commas (often the last part is empty if line ends with ,)
-                parts = [part for part in parts if part]
+                # Remove trailing empty strings (e.g. from trailing commas or spaces)
+                while parts and not parts[-1]:
+                    parts.pop()
                 
                 if len(parts) >= 3:
                     subject = parts[0]
@@ -128,12 +129,27 @@ def parse_tuple(tuple_file: pathlib.Path) -> List[Union[UddlTuple, QueryStatemen
                         except ValueError as e:
                              print(f"Warning: Failed to parse ParticipantPath in 'associates' tuple at line {line_num}: {e}")
                              pass
+                    
+                    if predicate == 'instance':
+                        # Parse object as ParticipantPath (for individual definitions with paths)
+                        # Only parse if object is not empty/whitespace
+                        if object_.strip():
+                            try:
+                                object_ = ParticipantPath.parse(object_)
+                            except ValueError as e:
+                                 print(f"Warning: Failed to parse ParticipantPath in 'instance' tuple at line {line_num}: {e}")
+                                 pass
+                        # If empty, keep as empty string (no path for this individual)
+                        # For instance tuples, rolename should always be provided (it's the individual name)
+                        # Skip auto-generation of rolename for instance tuples
 
-                    if not rolename and isinstance(object_, str):
-                        # Use the last part after a dot, if present
-                        object_name = object_.split('.')[-1]
-                        rolename = object_name[0].lower() + object_name[1:]
-                    elif not rolename and isinstance(object_, ParticipantPath):
+                    # Auto-generate rolename only for non-instance tuples
+                    if predicate != 'instance':
+                        if not rolename and isinstance(object_, str):
+                            # Use the last part after a dot, if present
+                            object_name = object_.split('.')[-1]
+                            rolename = object_name[0].lower() + object_name[1:]
+                        elif not rolename and isinstance(object_, ParticipantPath):
                          if object_.resolutions:
                               rolename = object_.resolutions[-1].rolename
                          else:
