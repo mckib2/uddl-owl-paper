@@ -471,14 +471,16 @@ Table \ref{table:ast_mapping} summarizes how the primary components of a UDDL qu
 
 \section{Methods} \label{sec:methods}
 
-We generated example Interface Control Documents (ICDs) based on a generic satellite design (TODO: provided in appendix or summarized in table).  Based on these ICDs, we then created a reference satellite OWL ontology in Prot\'eg\'e and a UDDL data model using the PHENOM\textregistered{} modeling environment, and exported to XMI~\parencite{musen2015protege, phenom}.  The reference satellite ontology captured the structure of the satellite system components and their relationships from a system viewpoint.  The UDDL data model captured the interface semantics using the UDDL Query Language backed by a conceptual Entity and Association data model.  Diagrams of the ontology and data model are shown in Figure \ref{fig:satellite_ontology} and Figure \ref{fig:satellite_data_model}, respectively.  The UDDL data model contains examples of Generalizations, Entities with multiple compositions, Associations with simple and complex participant paths, as well as UDDL Query specifications.  The FACE Shared Data Model (SDM)~\parencite{sdm_v3_1_15} provides examples for Domain, Basis Entity, and Observable model elements.
-
 \begin{figure*}[t]
   \centering
   \colfig{figures/ontology-diagram.png}
   \caption{Reference Satellite Ontology}
   \label{fig:satellite_ontology}
 \end{figure*}
+
+We generated example Interface Control Documents (ICDs) based on a generic satellite design (TODO: provided in appendix or summarized in table).  Based on these ICDs, we then created a reference satellite OWL ontology in Prot\'eg\'e and a UDDL data model using the PHENOM\textregistered{} modeling environment, and exported to XMI~\parencite{musen2015protege, phenom}.  The reference satellite ontology captured the structure of the satellite system components and their relationships from a system viewpoint.  The UDDL data model captured the interface semantics using the UDDL Query Language backed by a conceptual Entity and Association data model.  Diagrams of the ontology and data model are shown in Figure \ref{fig:satellite_ontology} and Figure \ref{fig:satellite_data_model}, respectively.  The UDDL data model contains examples of Generalizations, Entities with multiple compositions, Associations with simple and complex participant paths, as well as UDDL Query specifications.  The FACE Shared Data Model (SDM)~\parencite{sdm_v3_1_15} provides examples for Domain, Basis Entity, and Observable model elements.
+
+
 
 \begin{figure*}[t]
   \centering
@@ -575,171 +577,6 @@ WHERE \{ \newline
 \hspace*{1.0em}?obs\_4\_operationalState :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
 \}} \\
 \hline
-% \textbf{UDDL Query (Solar Panel Power & Health)} \\ 
-% \hline
-% \scriptsize\texttt{SELECT solarPanel\_join.identifier AS solar\_panel\_id, \newline
-% \hspace*{3.5em}solarPanel\_Charges\_Battery\_join.temperature AS solar\_panel\_temperature, \newline
-% \hspace*{3.5em}solarPanel\_Charges\_Battery\_join.electricPotential AS solar\_panel\_voltage, \newline
-% \hspace*{3.5em}solarPanel\_Charges\_Battery\_join.electricCurrent AS solar\_panel\_current, \newline
-% \hspace*{3.5em}solarPanel\_Charges\_Battery\_join.power AS solar\_panel\_total\_power, \newline
-% \hspace*{3.5em}solarPanel\_join.healthState AS health\_check, \newline
-% \hspace*{3.5em}solarPanel\_Charges\_Battery\_join.healthState AS solar\_panel\_degradation \newline
-% FROM Satellite AS satellite\_from \newline
-% JOIN SolarPanel\_PartOf\_Satellite AS solarPanel\_PartOf\_Satellite\_join \newline
-% \hspace*{2.0em}ON solarPanel\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
-% JOIN SolarPanel AS solarPanel\_join \newline
-% \hspace*{2.0em}ON solarPanel\_PartOf\_Satellite\_join.part \newline
-% JOIN SolarPanel\_Charges\_Battery AS solarPanel\_Charges\_Battery\_join \newline
-% \hspace*{2.0em}ON solarPanel\_Charges\_Battery\_join.charger = solarPanel\_join} \\ 
-% \hline
-% \textbf{SPARQL Translation} \\ 
-% \hline
-% \scriptsize\texttt{SELECT ?obs\_0\_identifier ?obs\_1\_temperature ?obs\_2\_electricPotential ?obs\_3\_electricCurrent ?obs\_4\_power ?obs\_5\_healthState ?obs\_6\_healthState \newline
-% WHERE \{ \newline
-% \hspace*{1.0em}?obs\_0\_identifier a :Observation . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasObservable :Identifier . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
-% \hspace*{1.0em}?obs\_1\_temperature a :Observation . \newline
-% \hspace*{1.0em}?obs\_1\_temperature :hasObservable :Temperature . \newline
-% \hspace*{1.0em}?obs\_1\_temperature :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_1\_temperature :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_1\_temperature :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
-% \hspace*{1.0em}?obs\_1\_temperature :hasSolarPanelParticipant\_charger :SolarPanel\_Charges\_Battery . \newline
-% \hspace*{1.0em}?obs\_2\_electricPotential a :Observation . \newline
-% \hspace*{1.0em}?obs\_2\_electricPotential :hasObservable :ElectricPotential . \newline
-% \hspace*{1.0em}?obs\_2\_electricPotential :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_2\_electricPotential :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_2\_electricPotential :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
-% \hspace*{1.0em}?obs\_2\_electricPotential :hasSolarPanelParticipant\_charger :SolarPanel\_Charges\_Battery . \newline
-% \hspace*{1.0em}?obs\_3\_electricCurrent a :Observation . \newline
-% \hspace*{1.0em}?obs\_3\_electricCurrent :hasObservable :ElectricCurrent . \newline
-% \hspace*{1.0em}?obs\_3\_electricCurrent :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_3\_electricCurrent :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_3\_electricCurrent :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
-% \hspace*{1.0em}?obs\_3\_electricCurrent :hasSolarPanelParticipant\_charger :SolarPanel\_Charges\_Battery . \newline
-% \hspace*{1.0em}?obs\_4\_power a :Observation . \newline
-% \hspace*{1.0em}?obs\_4\_power :hasObservable :Power . \newline
-% \hspace*{1.0em}?obs\_4\_power :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_4\_power :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_4\_power :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
-% \hspace*{1.0em}?obs\_4\_power :hasSolarPanelParticipant\_charger :SolarPanel\_Charges\_Battery . \newline
-% \hspace*{1.0em}?obs\_5\_healthState a :Observation . \newline
-% \hspace*{1.0em}?obs\_5\_healthState :hasObservable :HealthState . \newline
-% \hspace*{1.0em}?obs\_5\_healthState :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_5\_healthState :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_5\_healthState :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
-% \hspace*{1.0em}?obs\_6\_healthState a :Observation . \newline
-% \hspace*{1.0em}?obs\_6\_healthState :hasObservable :HealthState . \newline
-% \hspace*{1.0em}?obs\_6\_healthState :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_6\_healthState :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_6\_healthState :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
-% \hspace*{1.0em}?obs\_6\_healthState :hasSolarPanelParticipant\_charger :SolarPanel\_Charges\_Battery . \newline
-% \}} \\
-
-\hline
-% \textbf{UDDL Query (Louver Thermal Control)} \\ 
-% \hline
-% \scriptsize\texttt{SELECT louver\_join.identifier AS louver\_assembly\_id, \newline
-% \hspace*{3.5em}frame\_join.temperature AS frame\_temperature, \newline
-% \hspace*{3.5em}blade\_join.angle AS blade\_angle, \newline
-% \hspace*{3.5em}blade\_join.emissivity AS emissivity\_state \newline
-% FROM Satellite AS satellite\_from \newline
-% JOIN Louver\_PartOf\_Satellite AS louver\_PartOf\_Satellite\_join \newline
-% \hspace*{2.0em}ON louver\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
-% JOIN Louver AS louver\_join \newline
-% \hspace*{2.0em}ON louver\_PartOf\_Satellite\_join.part \newline
-% JOIN TemperatureSensor\_PartOf\_Satellite AS temperatureSensor\_PartOf\_Satellite\_join \newline
-% \hspace*{2.0em}ON temperatureSensor\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
-% JOIN TemperatureSensor AS temperatureSensor\_join \newline
-% \hspace*{2.0em}ON temperatureSensor\_PartOf\_Satellite\_join.part \newline
-% JOIN TemperatureSensor\_Observe\_LouverFrame AS temperatureSensor\_Observe\_LouverFrame\_join \newline
-% \hspace*{2.0em}ON temperatureSensor\_Observe\_LouverFrame\_join.observer = temperatureSensor\_join \newline
-% JOIN Frame\_PartOf\_Louver AS frame\_PartOf\_Louver\_join \newline
-% \hspace*{2.0em}ON temperatureSensor\_Observe\_LouverFrame\_join.observed \newline
-% JOIN Frame AS frame\_join \newline
-% \hspace*{2.0em}ON frame\_PartOf\_Louver\_join.part \newline
-% JOIN PositionSensor\_PartOf\_Satellite AS positionSensor\_PartOf\_Satellite\_join \newline
-% \hspace*{2.0em}ON positionSensor\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
-% JOIN PositionSensor AS positionSensor\_join \newline
-% \hspace*{2.0em}ON positionSensor\_PartOf\_Satellite\_join.part \newline
-% JOIN PositionSensor\_Observe\_LouverBlade AS positionSensor\_Observe\_LouverBlade\_join \newline
-% \hspace*{2.0em}ON positionSensor\_Observe\_LouverBlade\_join.observer = positionSensor\_join \newline
-% JOIN Blade\_PartOf\_Louver AS blade\_PartOf\_Louver\_join \newline
-% \hspace*{2.0em}ON positionSensor\_Observe\_LouverBlade\_join.observed \newline
-% JOIN Blade AS blade\_join \newline
-% \hspace*{2.0em}ON blade\_PartOf\_Louver\_join.part} \\ 
-% \hline
-% \textbf{SPARQL Translation} \\ 
-% \hline
-% \scriptsize\texttt{SELECT ?obs\_0\_identifier ?obs\_1\_temperature ?obs\_2\_angle ?obs\_3\_emissivity \newline
-% WHERE \{ \newline
-% \hspace*{1.0em}?obs\_0\_identifier a :Observation . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasObservable :Identifier . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasSatelliteParticipant\_assembly :Louver\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasLouver\_PartOf\_SatelliteComposition\_part :Louver . \newline
-% \hspace*{1.0em}?obs\_1\_temperature a :Observation . \newline
-% \hspace*{1.0em}?obs\_1\_temperature :hasObservable :Temperature . \newline
-% \hspace*{1.0em}?obs\_1\_temperature :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_1\_temperature :hasSatelliteParticipant\_assembly :TemperatureSensor\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_1\_temperature :hasTemperatureSensor\_PartOf\_SatelliteComposition\_part :TemperatureSensor . \newline
-% \hspace*{1.0em}?obs\_1\_temperature :hasTemperatureSensorParticipant\_observer :TemperatureSensor\_Observe\_LouverFrame . \newline
-% \hspace*{1.0em}?obs\_1\_temperature :hasTemperatureSensor\_Observe\_LouverFrameComposition\_observed :Frame . \newline
-% \hspace*{1.0em}?obs\_2\_angle a :Observation . \newline
-% \hspace*{1.0em}?obs\_2\_angle :hasObservable :Angle . \newline
-% \hspace*{1.0em}?obs\_2\_angle :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_2\_angle :hasSatelliteParticipant\_assembly :PositionSensor\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_2\_angle :hasPositionSensor\_PartOf\_SatelliteComposition\_part :PositionSensor . \newline
-% \hspace*{1.0em}?obs\_2\_angle :hasPositionSensorParticipant\_observer :PositionSensor\_Observe\_LouverBlade . \newline
-% \hspace*{1.0em}?obs\_2\_angle :hasPositionSensor\_Observe\_LouverBladeComposition\_observed :Blade . \newline
-% \hspace*{1.0em}?obs\_3\_emissivity a :Observation . \newline
-% \hspace*{1.0em}?obs\_3\_emissivity :hasObservable :RadiantIntensity . \newline
-% \hspace*{1.0em}?obs\_3\_emissivity :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_3\_emissivity :hasSatelliteParticipant\_assembly :PositionSensor\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_3\_emissivity :hasPositionSensor\_PartOf\_SatelliteComposition\_part :PositionSensor . \newline
-% \hspace*{1.0em}?obs\_3\_emissivity :hasPositionSensorParticipant\_observer :PositionSensor\_Observe\_LouverBlade . \newline
-% \hspace*{1.0em}?obs\_3\_emissivity :hasPositionSensor\_Observe\_LouverBladeComposition\_observed :Blade . \newline
-% \}} \\
-
-\hline
-% \textbf{UDDL Query (Louver Health Check)} \\ 
-% \hline
-% \scriptsize\texttt{SELECT louver\_join.identifier AS louver\_assembly\_id, \newline
-% \hspace*{3.5em}louver\_join.healthState AS health\_check, \newline
-% \hspace*{3.5em}blade\_PartOf\_Louver\_join.healthState AS blade\_mechanical\_compliance\_check \newline
-% FROM Satellite AS satellite\_from \newline
-% JOIN Louver\_PartOf\_Satellite AS louver\_PartOf\_Satellite\_join \newline
-% \hspace*{2.0em}ON louver\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
-% JOIN Louver AS louver\_join \newline
-% \hspace*{2.0em}ON louver\_PartOf\_Satellite\_join.part \newline
-% JOIN Blade\_PartOf\_Louver AS blade\_PartOf\_Louver\_join \newline
-% \hspace*{2.0em}ON blade\_PartOf\_Louver\_join.assembly = louver\_join} \\ 
-% \hline
-% \textbf{SPARQL Translation} \\ 
-% \hline
-% \scriptsize\texttt{SELECT ?obs\_0\_identifier ?obs\_1\_healthState ?obs\_2\_healthState \newline
-% WHERE \{ \newline
-% \hspace*{1.0em}?obs\_0\_identifier a :Observation . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasObservable :Identifier . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasSatelliteParticipant\_assembly :Louver\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasLouver\_PartOf\_SatelliteComposition\_part :Louver . \newline
-% \hspace*{1.0em}?obs\_1\_healthState a :Observation . \newline
-% \hspace*{1.0em}?obs\_1\_healthState :hasObservable :HealthState . \newline
-% \hspace*{1.0em}?obs\_1\_healthState :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_1\_healthState :hasSatelliteParticipant\_assembly :Louver\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_1\_healthState :hasLouver\_PartOf\_SatelliteComposition\_part :Louver . \newline
-% \hspace*{1.0em}?obs\_2\_healthState a :Observation . \newline
-% \hspace*{1.0em}?obs\_2\_healthState :hasObservable :HealthState . \newline
-% \hspace*{1.0em}?obs\_2\_healthState :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_2\_healthState :hasSatelliteParticipant\_assembly :Louver\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_2\_healthState :hasLouver\_PartOf\_SatelliteComposition\_part :Louver . \newline
-% \hspace*{1.0em}?obs\_2\_healthState :hasLouverParticipant\_assembly :Blade\_PartOf\_Louver . \newline
-% \}} \\
-
-\hline
 \end{tabular}
     \caption{Example UDDL Queries and Generated SPARQL.}
     \label{tab:query_examples}
@@ -759,7 +596,7 @@ Can we add constraints on constructions of ontologies that force conformance wit
 TODO
 
 
-\section{Acknowledgements} \label{sec:acknowledgements}
+\section{Acknowledgments} \label{sec:acknowledgements}
 
 This work was conducted using Prot\'eg\'e.
 
@@ -786,6 +623,103 @@ This work was conducted using Prot\'eg\'e.
 \authorbioentry{template-images/author2_pic.jpg}{Second Author}{Provide a short biography of the second author.}
 \authorbioentry{template-images/author3_pic.jpg}{Third Author}{Provide a short biography of the third author.}
 
+
+\newpage
+
+\section{Appendix} \label{sec:Appendix}
+
+\subsection{ICD Satellite systems} \label{section:ICD_satellitesystems}
+
+\subsubsection{Passive Thermal Control System:  Venetian-blind Louvers } \label{section:Venetian_Blinds}
+Louvers are mechanical components that passively aid the regulation of thermal convection between the satellite's internal components (payload, comm system, etc.) and the outer space vacuum. Louvers are usually employed on satellites because of their low mass, and their operation relies solely on temperature variation rather than generated power, leaving margin in the satellite power and mass budget.
+
+
+\subsubsection{Location on Satellite and Systems Interactions} \label{section:Venetian_Blinds}
+Louvers are mostly part of an external radiator assembly (being located on top of it), which is placed on the satellite flat panels or on deployable panels. Louvers could also be placed internally between surfaces to move the heat from the heat sources to radiators and ultimately away from the satellite. Or in general terms, they are located on top of a heat source while facing a cold sink (space vacuum).
+
+\begin{table*}[t]
+    \centering
+    \begin{tabular}{|p{0.25\linewidth}|p{0.25\linewidth}|}
+        \hline
+        \textbf{Interacting Systems} & \textbf{Primary Assignment} \\
+        \hline
+        Thermal Control  & Thermal regulation. \\
+        \hline
+        Onboard Computer (OBC) & Temperature monitoring.\\
+        \hline
+    \end{tabular}
+    \caption{Venetian-blind Louvers Interacting Systems}
+    \label{tab:Venetian_blinds}
+\end{table*}
+
+\subsubsection{System Multiplicity} \label{section:Venetian_Blinds}
+The satellite may include one or more louvers and each one of them operates individually and send its own telemetry messages.
+
+\begin{table*}[t]
+    \centering
+    \begin{tabular}{|p{0.25\linewidth}|p{0.25\linewidth}|}
+        \hline
+        \textbf{Interface} & \textbf{Exist on System} \\
+        \hline
+        Telemetry & \checkmark \\
+        \hline
+        Command & $\times$ \\
+        \hline
+        Thermal &  \checkmark \\
+        \hline
+        Mechanical &  \checkmark\\
+        \hline
+        Power &  $\times$ \\
+        \hline
+    \end{tabular}
+    \caption{Venetian-blind Louvers Interacting Systems}
+    \label{tab:Venetian_blinds}
+\end{table*}
+
+\subsubsection{Louver Mechanical Assembly Components and Interfaces} \label{section:Venetian_Blinds}
+Louvers are made of three main components
+\textbf{Structural frame} is mounted to a heat source within the satellite (internal or external),
+\textbf{Louver blades} are the elements that open and close, regulating heat convection and emissivity levels of the heat source of interest.
+\textbf{Bimetallic Springs} (made of two different aluminium alloys) are temperature-sensitive springs that connect the structural frame (in touch with the heat source) with the blades. They are bimetal to ensure that their bending will effectively open the blades at an angle.  The spring materials have a set point temperature between around -20 C and +50 C when the blades start to open. Then the blades go from fully closed to fully open within a 10-20 C control band [est et TO ADD REF] 
+
+
+
+
+
+\subsubsection{Mechanical Operation and Telemetry Messages } \label{section:Venetian_Blinds}
+
+During periods of higher operational needs (e.g. increase of data transmission between the communication subsystem and the ground station) the source of interest heats up, consequently increasing the temperature within the louvers' structural frame. The bimetallic springs, being installed on the frame, will consequently change its state. As the springs receive heat, the metals that compose them will expand at different rates, which allows the blades to mechanically open. By rotating, they expose the heat source surface (high emissivity) to the cold sink so that more heat can be irradiated out into the space vacuum, without overheating the source and compromising critical operations.
+When the heat source and the structural frame cool down, consequently, the springs will compress to close the blades, reducing heat dissipation (low-emissivity) and keeping the source warmer during low-demand periods.
+
+
+
+
+
+
+
+\subsubsection{Power Generation System: Solar Panels} \label{section:Solar_Panels}
+A Solar Panel (also known as a photovoltaic cell or solar cell) is a flat surface device that directly transforms solar radiation into electrical power. Earth-orbiting satellites from LEO (Low Earth Orbit) to GEO (Geosynchronous Orbit) are the best candidates for solar panels as their power source.
+Solar panels are used to convert sunlight into electrical power that the satellite systems and subsystems use to support their operations during the mission lifetime. The solar energy converted by the panels can also be stored in onboard batteries that will provide electrical energy to the satellite systems while in the Earth’s shadow.
+
+
+
+\textit{Location on Satellite and Systems Interactions} \label{section:Solar_Panels} \\
+
+
+\textit{System Multiplicity} \label{section:Solar_Panels} \\
+
+
+
+\textit{Solar Panels Mechanical Assembly Components and Interfaces} \label{section:Solar_Panels} \\
+
+
+\textit{Mechanical Operation and Telemetry Messages } \label{section:Solar_Panels} \\
+
+
+
+
+
+ 
 \end{multicols*}
 
 \end{document}
