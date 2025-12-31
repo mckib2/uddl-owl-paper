@@ -16,6 +16,6 @@ npx -p @mermaid-js/mermaid-cli mmdc -q -b -t neutral --scale 2 -i "$DIR/figures/
 convert "$DIR/figures/ontology-diagram.png" -trim "$DIR/figures/ontology-diagram.png"
 
 # Generate the uddl-data-model.png diagram
-python "$DIR/src/vistuple.py" "$DIR/src/examples/satellite.txt" --output "$DIR/figures/uddl-data-model.mmd"
+python "$DIR/src/vistuple.py" "$DIR/src/examples/incose_uddl2owl.txt" --output "$DIR/figures/uddl-data-model.mmd"
 npx -p @mermaid-js/mermaid-cli mmdc -q -b -t neutral --scale 2 -i "$DIR/figures/uddl-data-model.mmd" -o "$DIR/figures/uddl-data-model.png"
 convert "$DIR/figures/uddl-data-model.png" -trim "$DIR/figures/uddl-data-model.png"
