@@ -291,7 +291,6 @@ Associations of Participant Paths require a hypergraph representation of a UDDL 
 
 \begin{table*}[t]
     \centering
-    \caption{Core UDDL Conceptual Meta-Model Elements.} \label{tab:cdm_elements}
     \begin{tabular}{|p{0.20\linewidth}|p{0.40\linewidth}|p{0.40\linewidth}|}
         \hline
         \textbf{Element Name} & \textbf{Construction} & \textbf{Example} \\
@@ -310,12 +309,12 @@ Associations of Participant Paths require a hypergraph representation of a UDDL 
         Association & A domain concept that is expressible only through the relation of two or more Participants (Entities and/or Observables).  Associations may also compose a set of Entities and/or Observables and Specialize another Entity or Domain Entity. & \texttt{Ownership}; composes \texttt{Duration} and associates \texttt{Person}, \texttt{Car} Entities through \texttt{owner}, \texttt{asset} Participant roles. \\
         \hline
     \end{tabular}
+    \caption{Core UDDL Conceptual Meta-Model Elements.} \label{tab:cdm_elements}
 \end{table*}
 
 \begin{table*}[t]
     \centering
-    \caption{UDDL Conceptual Relationships.} \label{tab:cdm_relationships}
-    \begin{tabular}{|p{0.15\linewidth}|p{0.45\linewidth}|p{0.3\linewidth}|}
+    \begin{tabular}{|p{0.15\linewidth}|p{0.55\linewidth}|p{0.3\linewidth}|}
         \hline
         \textbf{Relation} & \textbf{Construction} & \textbf{Example} \\
         \hline
@@ -328,6 +327,7 @@ Associations of Participant Paths require a hypergraph representation of a UDDL 
         Realization & Refinement relationship binding abstract concepts to more specific definitions across model levels (CDM $\to$ LDM).  Cannot be traversed by Participant Paths (no meaning by doing this). & \texttt{AltitudeMeters} (LDM) realizes \texttt{Altitude} (CDM). \\
         \hline
     \end{tabular}
+    \caption{UDDL Conceptual Relationships.} \label{tab:cdm_relationships}
 \end{table*}
 
 Table \ref{tab:cdm_relationships} summarizes how relationships between core UDDL Conceptual Meta-Model Elements are constructed.  Composition relationships include optional multiplicity specifications to indicate the minimum and maximum number of elements that can be composed ($ -1 $ indicates unbounded).  If not specified, the default is one.  Similarly, Participants of Associations include optional source and target multiplicities that are applied when calculating the multiplicities along the Participant Paths.  Participant multiplicities are assumed to be unbounded if not specified.
@@ -352,7 +352,7 @@ The SWT stack provides a layered architecture for representing, querying, and re
 
 \begin{table*}[t]
     \centering
-    \begin{tabular}{|p{0.15\linewidth}|p{0.75\linewidth}|}
+    \begin{tabular}{|p{0.12\linewidth}|p{0.88\linewidth}|}
         \hline
         \textbf{Technology} & \textbf{Description} \\
         \hline
@@ -442,8 +442,6 @@ First, we analyze the UDDL query to determine exactly how every piece of data is
 
 \begin{table*}[t]
 \centering
-\caption{Mapping UDDL Query Components to Semantic Graph Patterns}
-\label{table:ast_mapping}
 \renewcommand{\arraystretch}{1.5}
 \begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
     \rowcolor{tableheader}
@@ -458,6 +456,8 @@ First, we analyze the UDDL query to determine exactly how every piece of data is
     \texttt{AND} (in Joins) & \textbf{Convergence}: Requiring an entity to satisfy multiple relationships simultaneously. & Shared Variable $ ?b $ used in multiple patterns (e.g., $ ?a \to ?b $ AND $ ?c \to ?b $) \\
     \bottomrule
 \end{tabularx}
+\caption{Mapping UDDL Query Components to Semantic Graph Patterns}
+\label{table:ast_mapping}
 \end{table*}
 
 Crucially, this step resolves complex constraints like ``Diamond Joins'' or \texttt{AND} conditions.  If a UDDL query specifies that an entity $ D $ must be joined to both $ B $ and $ C $ (e.g., \texttt{JOIN D ON D.ref1 = B AND D.ref2 = C}), the Alias Map records two distinct paths reaching the same alias $ D $.  This captures the requirement that $ D $ must be the intersection (or convergence) of these two paths.
@@ -471,27 +471,52 @@ Table \ref{table:ast_mapping} summarizes how the primary components of a UDDL qu
 
 \section{Methods} \label{sec:methods}
 
-Create example ICDs based on a generic satellite.
+We generated example Interface Control Documents (ICDs) based on a generic satellite design (TODO: provided in appendix or summarized in table).  Based on these ICDs, we then created a reference satellite OWL ontology in Prot\'eg\'e and a UDDL data model using the PHENOM\textregistered{} modeling environment, and exported to XMI~\parencite{musen2015protege, phenom}.  The reference satellite ontology captured the structure of the satellite system components and their relationships from a system viewpoint.  The UDDL data model captured the interface semantics using the UDDL Query Language backed by a conceptual Entity and Association data model.  Diagrams of the ontology and data model are shown in Figure \ref{fig:satellite_ontology} and Figure \ref{fig:satellite_data_model}, respectively.  The UDDL data model contains examples of Generalizations, Entities with multiple compositions, Associations with simple and complex participant paths, as well as UDDL Query specifications.  The FACE Shared Data Model (SDM)~\parencite{sdm_v3_1_15} provides examples for Domain, Basis Entity, and Observable model elements.
 
-Capture interfaces data definitions in a UDDL data model and associated UDDL queries.  5 queries, we want to show one that is non-sensical in some way, i.e., is a valid model, but an ontology would indicate that what is modeled does not make sense physically.
+\begin{figure*}[t]
+  \centering
+  \colfig{figures/ontology-diagram.png}
+  \caption{Reference Satellite Ontology}
+  \label{fig:satellite_ontology}
+\end{figure*}
 
-Transform the UDDL data model into an ontology.
+\begin{figure*}[t]
+  \centering
+  \colfig{figures/uddl-data-model.png}
+  \caption{UDDL Data Model}
+  \label{fig:satellite_data_model}
+\end{figure*}
 
-Create a reference satellite ontology that has perhaps ``richer'' or more detailed relationships than specified the UDDL data model.
+The set of Queries generated from the example satellite ICDs are shown in Table \ref{tab:query_examples}.  Some queries are intentionally designed to be ``non-sensical'' against the reference ontology to demonstrate reasoning and inference for consistency checking on systems.
 
-Match entities between the transformed model and the reference satellite ontology.
+The UDDL data model was transformed into an OWL ontology using the mapping methodology presented in \nameref{sec:uddl2owl_mapping}.  The conversion was implemented in Python by processing the OWL and UDDL data model XML representations.  The generated ontology was then loaded into Prot\'eg\'e with the HermiT reasoner version 1.4.3 configured~\parencite{glimm2014hermit}.  After loading the ontology, the reasoner was started.  The Prot\'eg\'e environment was used to visualize and execute SPARQL queries against the ontology.  The Snap SPARQL plugin was used to allow queries to be run over inferred elements of the ontology~\parencite{horridge2015snap}.  An ontology alignment was manually generated between the classes in the reference and generated ontologies to enable reasoning across both.
 
-``Draw''/match the semantic paths from the UDDL queries onto the ontology.  We would like to create entity instances that demonstrate how to check a system-level connectivity diagram by using the UDDL query specifications.
+Instances for system components as well as observations were created.  An Observation OWL class was created to allow named individuals representing measurements of and inferences on Observables.  We then executed each SPARQL query against the aligned ontologies and individuals.
 
-Expressivity Profiling: Determine the Description Logic (DL) complexity class (e.g., $\mathcal{ALC}$, $\mathcal{SHOIN}$, $\mathcal{SROIQ}$).  This tells you the worst-case computational complexity for reasoning.
-
-Consistency and Satisfiability Check: Use a reasoner (like HermiT or Pellet) to check for logical contradictions.  This reveals hidden contradictions.
-
-Entailment Ratio: Count the explicit axioms vs. inferred axioms after running a reasoner.  This gives a measure of ``Hidden knowledge''.  If the inferred count is high, the ontology is ``powerful'', i.e., it generates new data for free.  If it is zero, might not be utilizing OWL features effectively.
 
 \section{Results} \label{sec:results}
 
-TODO
+The generated ontology was loaded into Prot\'eg\'e with the HermiT reasoner configured.  The reasoner verified that there were no logical contradictions.
+
+``Draw''/match the semantic paths from the UDDL queries onto the ontology.  We would like to create entity instances that demonstrate how to check a system-level connectivity diagram by using the UDDL query specifications.
+
+\begin{table*}[t]
+    \centering
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{|p{0.25\linewidth}|p{0.35\linewidth}|p{0.35\linewidth}|}
+        \hline
+        \textbf{Description} & \textbf{UDDL Query} & \textbf{SPARQL} \\
+        \hline
+        Retrieve Satellite Position & \texttt{SELECT Position FROM Satellite} & \texttt{SELECT ?pos WHERE \{ ?s a :Satellite . ?s :hasPosition ?pos \}} \\
+        \hline
+        Retrieve Sensor Temperature & \texttt{SELECT Temperature FROM Sensor JOIN Component ON Sensor.partOf = Component} & \texttt{SELECT ?temp WHERE \{ ?s a :Sensor . ?s :partOf ?c . ?c a :Component . ?s :measures ?temp \}} \\
+        \hline
+        Invalid Mass Measurement & \texttt{SELECT Mass FROM TempSensor} & \texttt{SELECT ?mass WHERE \{ ?s a :TempSensor . ?s :measures ?mass . ?mass a :Mass \}} \\
+        \hline
+    \end{tabular}
+    \caption{Example UDDL Queries and Generated SPARQL.}
+    \label{tab:query_examples}
+\end{table*}
 
 \section{Analysis} \label{sec:analysis}
 
@@ -507,8 +532,9 @@ Can we add constraints on constructions of ontologies that force conformance wit
 TODO
 
 
+\section{Acknowledgements} \label{sec:acknowledgements}
 
-
+This work was conducted using Prot\'eg\'e.
 
 \newpage
 \section{References}
