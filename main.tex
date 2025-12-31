@@ -503,17 +503,244 @@ The generated ontology was loaded into Prot\'eg\'e with the HermiT reasoner conf
 \begin{table*}[t]
     \centering
     \renewcommand{\arraystretch}{1.5}
-    \begin{tabular}{|p{0.25\linewidth}|p{0.35\linewidth}|p{0.35\linewidth}|}
-        \hline
-        \textbf{Description} & \textbf{UDDL Query} & \textbf{SPARQL} \\
-        \hline
-        Retrieve Satellite Position & \texttt{SELECT Position FROM Satellite} & \texttt{SELECT ?pos WHERE \{ ?s a :Satellite . ?s :hasPosition ?pos \}} \\
-        \hline
-        Retrieve Sensor Temperature & \texttt{SELECT Temperature FROM Sensor JOIN Component ON Sensor.partOf = Component} & \texttt{SELECT ?temp WHERE \{ ?s a :Sensor . ?s :partOf ?c . ?c a :Component . ?s :measures ?temp \}} \\
-        \hline
-        Invalid Mass Measurement & \texttt{SELECT Mass FROM TempSensor} & \texttt{SELECT ?mass WHERE \{ ?s a :TempSensor . ?s :measures ?mass . ?mass a :Mass \}} \\
-        \hline
-    \end{tabular}
+    \begin{tabular}{|p{0.95\linewidth}|}
+\hline
+\textbf{UDDL Query (Solar Panel Monitoring)} \\ 
+\hline
+\scriptsize\texttt{SELECT solarPanel\_join.identifier AS solar\_panel\_id, \newline
+\hspace*{3.5em}solarPanel\_join.healthState AS solar\_panel\_deploy, \newline
+\hspace*{3.5em}panel\_join.temperature AS solar\_panel\_temp, \newline
+\hspace*{3.5em}solarPanel\_IncidenceAngle\_Sun\_join.angle AS solar\_panel\_incidence, \newline
+\hspace*{3.5em}solarPanel\_join.operationalState AS solar\_panel\_ops\_mode \newline
+FROM Satellite AS satellite\_from \newline
+JOIN SolarPanel\_PartOf\_Satellite AS solarPanel\_PartOf\_Satellite\_join \newline
+\hspace*{2.0em}ON solarPanel\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
+JOIN SolarPanel AS solarPanel\_join \newline
+\hspace*{2.0em}ON solarPanel\_PartOf\_Satellite\_join.part \newline
+JOIN TemperatureSensor\_PartOf\_Satellite AS temperatureSensor\_PartOf\_Satellite\_join \newline
+\hspace*{2.0em}ON temperatureSensor\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
+JOIN TemperatureSensor AS temperatureSensor\_join \newline
+\hspace*{2.0em}ON temperatureSensor\_PartOf\_Satellite\_join.part \newline
+JOIN TemperatureSensor\_Observe\_SolarPanel AS temperatureSensor\_Observe\_SolarPanel\_join \newline
+\hspace*{2.0em}ON temperatureSensor\_Observe\_SolarPanel\_join.observer = temperatureSensor\_join \newline
+JOIN SolarPanel AS solarPanel\_joinI \newline
+\hspace*{2.0em}ON temperatureSensor\_Observe\_SolarPanel\_join.observed \newline
+JOIN Panel\_PartOf\_SolarPanel AS panel\_PartOf\_SolarPanel\_join \newline
+\hspace*{2.0em}ON panel\_PartOf\_SolarPanel\_join.assembly = solarPanel\_joinI \newline
+JOIN Panel AS panel\_join \newline
+\hspace*{2.0em}ON panel\_PartOf\_SolarPanel\_join.part \newline
+JOIN SunSenor\_PartOf\_Satellite AS sunSenor\_PartOf\_Satellite\_join \newline
+\hspace*{2.0em}ON sunSenor\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
+JOIN SunSensor AS sunSensor\_join \newline
+\hspace*{2.0em}ON sunSenor\_PartOf\_Satellite\_join.part \newline
+JOIN SunSensor\_Observe\_IncidenceAngle AS sunSensor\_Observe\_IncidenceAngle\_join \newline
+\hspace*{2.0em}ON sunSensor\_Observe\_IncidenceAngle\_join.observer = sunSensor\_join \newline
+JOIN SolarPanel\_IncidenceAngle\_Sun AS solarPanel\_IncidenceAngle\_Sun\_join \newline
+\hspace*{2.0em}ON sunSensor\_Observe\_IncidenceAngle\_join.observed} \\ 
+\hline
+\textbf{SPARQL Translation} \\ 
+\hline
+\scriptsize\texttt{SELECT ?obs\_0\_identifier ?obs\_1\_healthState ?obs\_2\_temperature ?obs\_3\_angle ?obs\_4\_operationalState \newline
+WHERE \{ \newline
+\hspace*{1.0em}?obs\_0\_identifier a :Observation . \newline
+\hspace*{1.0em}?obs\_0\_identifier :hasObservable :Identifier . \newline
+\hspace*{1.0em}?obs\_0\_identifier :hasSatellite :Satellite . \newline
+\hspace*{1.0em}?obs\_0\_identifier :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
+\hspace*{1.0em}?obs\_0\_identifier :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
+\hspace*{1.0em}?obs\_1\_healthState a :Observation . \newline
+\hspace*{1.0em}?obs\_1\_healthState :hasObservable :HealthState . \newline
+\hspace*{1.0em}?obs\_1\_healthState :hasSatellite :Satellite . \newline
+\hspace*{1.0em}?obs\_1\_healthState :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
+\hspace*{1.0em}?obs\_1\_healthState :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
+\hspace*{1.0em}?obs\_2\_temperature a :Observation . \newline
+\hspace*{1.0em}?obs\_2\_temperature :hasObservable :Temperature . \newline
+\hspace*{1.0em}?obs\_2\_temperature :hasSatellite :Satellite . \newline
+\hspace*{1.0em}?obs\_2\_temperature :hasSatelliteParticipant\_assembly :TemperatureSensor\_PartOf\_Satellite . \newline
+\hspace*{1.0em}?obs\_2\_temperature :hasTemperatureSensor\_PartOf\_SatelliteComposition\_part :TemperatureSensor . \newline
+\hspace*{1.0em}?obs\_2\_temperature :hasTemperatureSensorParticipant\_observer :TemperatureSensor\_Observe\_SolarPanel . \newline
+\hspace*{1.0em}?obs\_2\_temperature :hasTemperatureSensor\_Observe\_SolarPanelComposition\_observed :part . \newline
+\hspace*{1.0em}?obs\_2\_temperature :haspartParticipant\_assembly :Panel\_PartOf\_SolarPanel . \newline
+\hspace*{1.0em}?obs\_2\_temperature :hasPanel\_PartOf\_SolarPanelComposition\_part :Panel . \newline
+\hspace*{1.0em}?obs\_3\_angle a :Observation . \newline
+\hspace*{1.0em}?obs\_3\_angle :hasObservable :Angle . \newline
+\hspace*{1.0em}?obs\_3\_angle :hasSatellite :Satellite . \newline
+\hspace*{1.0em}?obs\_3\_angle :hasSatelliteParticipant\_assembly :SunSenor\_PartOf\_Satellite . \newline
+\hspace*{1.0em}?obs\_3\_angle :hasSunSenor\_PartOf\_SatelliteComposition\_part :SunSensor . \newline
+\hspace*{1.0em}?obs\_3\_angle :hasSunSensorParticipant\_observer :SunSensor\_Observe\_IncidenceAngle . \newline
+\hspace*{1.0em}?obs\_3\_angle :hasSunSensor\_Observe\_IncidenceAngleComposition\_observed :SolarPanel\_IncidenceAngle\_Sun . \newline
+\hspace*{1.0em}?obs\_4\_operationalState a :Observation . \newline
+\hspace*{1.0em}?obs\_4\_operationalState :hasObservable :OperationalState . \newline
+\hspace*{1.0em}?obs\_4\_operationalState :hasSatellite :Satellite . \newline
+\hspace*{1.0em}?obs\_4\_operationalState :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
+\hspace*{1.0em}?obs\_4\_operationalState :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
+\}} \\
+\hline
+% \textbf{UDDL Query (Solar Panel Power & Health)} \\ 
+% \hline
+% \scriptsize\texttt{SELECT solarPanel\_join.identifier AS solar\_panel\_id, \newline
+% \hspace*{3.5em}solarPanel\_Charges\_Battery\_join.temperature AS solar\_panel\_temperature, \newline
+% \hspace*{3.5em}solarPanel\_Charges\_Battery\_join.electricPotential AS solar\_panel\_voltage, \newline
+% \hspace*{3.5em}solarPanel\_Charges\_Battery\_join.electricCurrent AS solar\_panel\_current, \newline
+% \hspace*{3.5em}solarPanel\_Charges\_Battery\_join.power AS solar\_panel\_total\_power, \newline
+% \hspace*{3.5em}solarPanel\_join.healthState AS health\_check, \newline
+% \hspace*{3.5em}solarPanel\_Charges\_Battery\_join.healthState AS solar\_panel\_degradation \newline
+% FROM Satellite AS satellite\_from \newline
+% JOIN SolarPanel\_PartOf\_Satellite AS solarPanel\_PartOf\_Satellite\_join \newline
+% \hspace*{2.0em}ON solarPanel\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
+% JOIN SolarPanel AS solarPanel\_join \newline
+% \hspace*{2.0em}ON solarPanel\_PartOf\_Satellite\_join.part \newline
+% JOIN SolarPanel\_Charges\_Battery AS solarPanel\_Charges\_Battery\_join \newline
+% \hspace*{2.0em}ON solarPanel\_Charges\_Battery\_join.charger = solarPanel\_join} \\ 
+% \hline
+% \textbf{SPARQL Translation} \\ 
+% \hline
+% \scriptsize\texttt{SELECT ?obs\_0\_identifier ?obs\_1\_temperature ?obs\_2\_electricPotential ?obs\_3\_electricCurrent ?obs\_4\_power ?obs\_5\_healthState ?obs\_6\_healthState \newline
+% WHERE \{ \newline
+% \hspace*{1.0em}?obs\_0\_identifier a :Observation . \newline
+% \hspace*{1.0em}?obs\_0\_identifier :hasObservable :Identifier . \newline
+% \hspace*{1.0em}?obs\_0\_identifier :hasSatellite :Satellite . \newline
+% \hspace*{1.0em}?obs\_0\_identifier :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
+% \hspace*{1.0em}?obs\_0\_identifier :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
+% \hspace*{1.0em}?obs\_1\_temperature a :Observation . \newline
+% \hspace*{1.0em}?obs\_1\_temperature :hasObservable :Temperature . \newline
+% \hspace*{1.0em}?obs\_1\_temperature :hasSatellite :Satellite . \newline
+% \hspace*{1.0em}?obs\_1\_temperature :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
+% \hspace*{1.0em}?obs\_1\_temperature :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
+% \hspace*{1.0em}?obs\_1\_temperature :hasSolarPanelParticipant\_charger :SolarPanel\_Charges\_Battery . \newline
+% \hspace*{1.0em}?obs\_2\_electricPotential a :Observation . \newline
+% \hspace*{1.0em}?obs\_2\_electricPotential :hasObservable :ElectricPotential . \newline
+% \hspace*{1.0em}?obs\_2\_electricPotential :hasSatellite :Satellite . \newline
+% \hspace*{1.0em}?obs\_2\_electricPotential :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
+% \hspace*{1.0em}?obs\_2\_electricPotential :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
+% \hspace*{1.0em}?obs\_2\_electricPotential :hasSolarPanelParticipant\_charger :SolarPanel\_Charges\_Battery . \newline
+% \hspace*{1.0em}?obs\_3\_electricCurrent a :Observation . \newline
+% \hspace*{1.0em}?obs\_3\_electricCurrent :hasObservable :ElectricCurrent . \newline
+% \hspace*{1.0em}?obs\_3\_electricCurrent :hasSatellite :Satellite . \newline
+% \hspace*{1.0em}?obs\_3\_electricCurrent :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
+% \hspace*{1.0em}?obs\_3\_electricCurrent :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
+% \hspace*{1.0em}?obs\_3\_electricCurrent :hasSolarPanelParticipant\_charger :SolarPanel\_Charges\_Battery . \newline
+% \hspace*{1.0em}?obs\_4\_power a :Observation . \newline
+% \hspace*{1.0em}?obs\_4\_power :hasObservable :Power . \newline
+% \hspace*{1.0em}?obs\_4\_power :hasSatellite :Satellite . \newline
+% \hspace*{1.0em}?obs\_4\_power :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
+% \hspace*{1.0em}?obs\_4\_power :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
+% \hspace*{1.0em}?obs\_4\_power :hasSolarPanelParticipant\_charger :SolarPanel\_Charges\_Battery . \newline
+% \hspace*{1.0em}?obs\_5\_healthState a :Observation . \newline
+% \hspace*{1.0em}?obs\_5\_healthState :hasObservable :HealthState . \newline
+% \hspace*{1.0em}?obs\_5\_healthState :hasSatellite :Satellite . \newline
+% \hspace*{1.0em}?obs\_5\_healthState :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
+% \hspace*{1.0em}?obs\_5\_healthState :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
+% \hspace*{1.0em}?obs\_6\_healthState a :Observation . \newline
+% \hspace*{1.0em}?obs\_6\_healthState :hasObservable :HealthState . \newline
+% \hspace*{1.0em}?obs\_6\_healthState :hasSatellite :Satellite . \newline
+% \hspace*{1.0em}?obs\_6\_healthState :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
+% \hspace*{1.0em}?obs\_6\_healthState :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
+% \hspace*{1.0em}?obs\_6\_healthState :hasSolarPanelParticipant\_charger :SolarPanel\_Charges\_Battery . \newline
+% \}} \\
+
+\hline
+% \textbf{UDDL Query (Louver Thermal Control)} \\ 
+% \hline
+% \scriptsize\texttt{SELECT louver\_join.identifier AS louver\_assembly\_id, \newline
+% \hspace*{3.5em}frame\_join.temperature AS frame\_temperature, \newline
+% \hspace*{3.5em}blade\_join.angle AS blade\_angle, \newline
+% \hspace*{3.5em}blade\_join.emissivity AS emissivity\_state \newline
+% FROM Satellite AS satellite\_from \newline
+% JOIN Louver\_PartOf\_Satellite AS louver\_PartOf\_Satellite\_join \newline
+% \hspace*{2.0em}ON louver\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
+% JOIN Louver AS louver\_join \newline
+% \hspace*{2.0em}ON louver\_PartOf\_Satellite\_join.part \newline
+% JOIN TemperatureSensor\_PartOf\_Satellite AS temperatureSensor\_PartOf\_Satellite\_join \newline
+% \hspace*{2.0em}ON temperatureSensor\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
+% JOIN TemperatureSensor AS temperatureSensor\_join \newline
+% \hspace*{2.0em}ON temperatureSensor\_PartOf\_Satellite\_join.part \newline
+% JOIN TemperatureSensor\_Observe\_LouverFrame AS temperatureSensor\_Observe\_LouverFrame\_join \newline
+% \hspace*{2.0em}ON temperatureSensor\_Observe\_LouverFrame\_join.observer = temperatureSensor\_join \newline
+% JOIN Frame\_PartOf\_Louver AS frame\_PartOf\_Louver\_join \newline
+% \hspace*{2.0em}ON temperatureSensor\_Observe\_LouverFrame\_join.observed \newline
+% JOIN Frame AS frame\_join \newline
+% \hspace*{2.0em}ON frame\_PartOf\_Louver\_join.part \newline
+% JOIN PositionSensor\_PartOf\_Satellite AS positionSensor\_PartOf\_Satellite\_join \newline
+% \hspace*{2.0em}ON positionSensor\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
+% JOIN PositionSensor AS positionSensor\_join \newline
+% \hspace*{2.0em}ON positionSensor\_PartOf\_Satellite\_join.part \newline
+% JOIN PositionSensor\_Observe\_LouverBlade AS positionSensor\_Observe\_LouverBlade\_join \newline
+% \hspace*{2.0em}ON positionSensor\_Observe\_LouverBlade\_join.observer = positionSensor\_join \newline
+% JOIN Blade\_PartOf\_Louver AS blade\_PartOf\_Louver\_join \newline
+% \hspace*{2.0em}ON positionSensor\_Observe\_LouverBlade\_join.observed \newline
+% JOIN Blade AS blade\_join \newline
+% \hspace*{2.0em}ON blade\_PartOf\_Louver\_join.part} \\ 
+% \hline
+% \textbf{SPARQL Translation} \\ 
+% \hline
+% \scriptsize\texttt{SELECT ?obs\_0\_identifier ?obs\_1\_temperature ?obs\_2\_angle ?obs\_3\_emissivity \newline
+% WHERE \{ \newline
+% \hspace*{1.0em}?obs\_0\_identifier a :Observation . \newline
+% \hspace*{1.0em}?obs\_0\_identifier :hasObservable :Identifier . \newline
+% \hspace*{1.0em}?obs\_0\_identifier :hasSatellite :Satellite . \newline
+% \hspace*{1.0em}?obs\_0\_identifier :hasSatelliteParticipant\_assembly :Louver\_PartOf\_Satellite . \newline
+% \hspace*{1.0em}?obs\_0\_identifier :hasLouver\_PartOf\_SatelliteComposition\_part :Louver . \newline
+% \hspace*{1.0em}?obs\_1\_temperature a :Observation . \newline
+% \hspace*{1.0em}?obs\_1\_temperature :hasObservable :Temperature . \newline
+% \hspace*{1.0em}?obs\_1\_temperature :hasSatellite :Satellite . \newline
+% \hspace*{1.0em}?obs\_1\_temperature :hasSatelliteParticipant\_assembly :TemperatureSensor\_PartOf\_Satellite . \newline
+% \hspace*{1.0em}?obs\_1\_temperature :hasTemperatureSensor\_PartOf\_SatelliteComposition\_part :TemperatureSensor . \newline
+% \hspace*{1.0em}?obs\_1\_temperature :hasTemperatureSensorParticipant\_observer :TemperatureSensor\_Observe\_LouverFrame . \newline
+% \hspace*{1.0em}?obs\_1\_temperature :hasTemperatureSensor\_Observe\_LouverFrameComposition\_observed :Frame . \newline
+% \hspace*{1.0em}?obs\_2\_angle a :Observation . \newline
+% \hspace*{1.0em}?obs\_2\_angle :hasObservable :Angle . \newline
+% \hspace*{1.0em}?obs\_2\_angle :hasSatellite :Satellite . \newline
+% \hspace*{1.0em}?obs\_2\_angle :hasSatelliteParticipant\_assembly :PositionSensor\_PartOf\_Satellite . \newline
+% \hspace*{1.0em}?obs\_2\_angle :hasPositionSensor\_PartOf\_SatelliteComposition\_part :PositionSensor . \newline
+% \hspace*{1.0em}?obs\_2\_angle :hasPositionSensorParticipant\_observer :PositionSensor\_Observe\_LouverBlade . \newline
+% \hspace*{1.0em}?obs\_2\_angle :hasPositionSensor\_Observe\_LouverBladeComposition\_observed :Blade . \newline
+% \hspace*{1.0em}?obs\_3\_emissivity a :Observation . \newline
+% \hspace*{1.0em}?obs\_3\_emissivity :hasObservable :RadiantIntensity . \newline
+% \hspace*{1.0em}?obs\_3\_emissivity :hasSatellite :Satellite . \newline
+% \hspace*{1.0em}?obs\_3\_emissivity :hasSatelliteParticipant\_assembly :PositionSensor\_PartOf\_Satellite . \newline
+% \hspace*{1.0em}?obs\_3\_emissivity :hasPositionSensor\_PartOf\_SatelliteComposition\_part :PositionSensor . \newline
+% \hspace*{1.0em}?obs\_3\_emissivity :hasPositionSensorParticipant\_observer :PositionSensor\_Observe\_LouverBlade . \newline
+% \hspace*{1.0em}?obs\_3\_emissivity :hasPositionSensor\_Observe\_LouverBladeComposition\_observed :Blade . \newline
+% \}} \\
+
+\hline
+% \textbf{UDDL Query (Louver Health Check)} \\ 
+% \hline
+% \scriptsize\texttt{SELECT louver\_join.identifier AS louver\_assembly\_id, \newline
+% \hspace*{3.5em}louver\_join.healthState AS health\_check, \newline
+% \hspace*{3.5em}blade\_PartOf\_Louver\_join.healthState AS blade\_mechanical\_compliance\_check \newline
+% FROM Satellite AS satellite\_from \newline
+% JOIN Louver\_PartOf\_Satellite AS louver\_PartOf\_Satellite\_join \newline
+% \hspace*{2.0em}ON louver\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
+% JOIN Louver AS louver\_join \newline
+% \hspace*{2.0em}ON louver\_PartOf\_Satellite\_join.part \newline
+% JOIN Blade\_PartOf\_Louver AS blade\_PartOf\_Louver\_join \newline
+% \hspace*{2.0em}ON blade\_PartOf\_Louver\_join.assembly = louver\_join} \\ 
+% \hline
+% \textbf{SPARQL Translation} \\ 
+% \hline
+% \scriptsize\texttt{SELECT ?obs\_0\_identifier ?obs\_1\_healthState ?obs\_2\_healthState \newline
+% WHERE \{ \newline
+% \hspace*{1.0em}?obs\_0\_identifier a :Observation . \newline
+% \hspace*{1.0em}?obs\_0\_identifier :hasObservable :Identifier . \newline
+% \hspace*{1.0em}?obs\_0\_identifier :hasSatellite :Satellite . \newline
+% \hspace*{1.0em}?obs\_0\_identifier :hasSatelliteParticipant\_assembly :Louver\_PartOf\_Satellite . \newline
+% \hspace*{1.0em}?obs\_0\_identifier :hasLouver\_PartOf\_SatelliteComposition\_part :Louver . \newline
+% \hspace*{1.0em}?obs\_1\_healthState a :Observation . \newline
+% \hspace*{1.0em}?obs\_1\_healthState :hasObservable :HealthState . \newline
+% \hspace*{1.0em}?obs\_1\_healthState :hasSatellite :Satellite . \newline
+% \hspace*{1.0em}?obs\_1\_healthState :hasSatelliteParticipant\_assembly :Louver\_PartOf\_Satellite . \newline
+% \hspace*{1.0em}?obs\_1\_healthState :hasLouver\_PartOf\_SatelliteComposition\_part :Louver . \newline
+% \hspace*{1.0em}?obs\_2\_healthState a :Observation . \newline
+% \hspace*{1.0em}?obs\_2\_healthState :hasObservable :HealthState . \newline
+% \hspace*{1.0em}?obs\_2\_healthState :hasSatellite :Satellite . \newline
+% \hspace*{1.0em}?obs\_2\_healthState :hasSatelliteParticipant\_assembly :Louver\_PartOf\_Satellite . \newline
+% \hspace*{1.0em}?obs\_2\_healthState :hasLouver\_PartOf\_SatelliteComposition\_part :Louver . \newline
+% \hspace*{1.0em}?obs\_2\_healthState :hasLouverParticipant\_assembly :Blade\_PartOf\_Louver . \newline
+% \}} \\
+
+\hline
+\end{tabular}
     \caption{Example UDDL Queries and Generated SPARQL.}
     \label{tab:query_examples}
 \end{table*}
