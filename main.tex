@@ -190,7 +190,7 @@
 \usepackage{url}       % For URLs in bibliography
 \usepackage{authblk}   % For author affiliations
 \usepackage{longtable} % For multi-page tables
-
+\usepackage{siunitx}   % For SI units
 
 
 % =========================
@@ -210,10 +210,10 @@
   \authorcard{Author One}{Organization}{Street Address}{City, Province, Postal}{author.one@email.com} &
   \authorcard{Author Two}{Organization}{Street Address}{City, Province, Postal}{author.two@email.com} &
   \authorcard{Author Three}{Organization}{Street Address}{City, Province, Postal}{author.three@email.com} \\
-  \multicolumn{3}{@{}c@{}}{} \\[-0.2\baselineskip]
+  \multicolumn{3}{@{}c@{}}{\rule{0pt}{0.9\baselineskip}} \\[-0.2\baselineskip]%\multicolumn{3}{@{}c@{}}{\rule{0pt}{0.9\baselineskip}} \\[-0.2\baselineskip]
   \authorcard{Author Four}{Organization}{Street Address}{City, Province, Postal}{author.four@email.com} &
   \authorcard{Author Five}{Organization}{Street Address}{City, Province, Postal}{author.five@email.com} &
-  \authorcard{Author Six}{Organization}{Street Address}{City, Province, Postal}{author.six@email.com} \\
+  \authorcard{Author Six}{Organization}{Street Address}{City, Province, Postal}{author.six@email.com}%\authorcard{Author Six}{Organization}{Street Address}{City, Province, Postal}{author.six@email.com}
 \end{tabular*}
 \addvspace{.75in}
 
@@ -621,100 +621,267 @@ This work was conducted using Prot\'eg\'e.
 
 \newpage
 
-\section{Appendix} \label{sec:Appendix}
+\section{Appendix: Satellite System ICD} \label{sec:Appendix}
 
-\subsection{ICD Satellite systems} \label{section:ICD_satellitesystems}
+\subsection{Passive Thermal Control: Venetian-blind Louvers} \label{section:venetian_blind_louvers}
 
-\subsubsection{Passive Thermal Control System:  Venetian-blind Louvers } \label{section:Venetian_Blinds}
 Louvers are mechanical components that passively aid the regulation of thermal convection between the satellite's internal components (payload, comm system, etc.) and the outer space vacuum. Louvers are usually employed on satellites because of their low mass, and their operation relies solely on temperature variation rather than generated power, leaving margin in the satellite power and mass budget.
 
+\subsection{Location on Satellite and Systems Interactions} \label{section:louvers_location}
 
-\subsubsection{Location on Satellite and Systems Interactions} \label{section:Venetian_Blinds}
 Louvers are mostly part of an external radiator assembly (being located on top of it), which is placed on the satellite flat panels or on deployable panels. Louvers could also be placed internally between surfaces to move the heat from the heat sources to radiators and ultimately away from the satellite. Or in general terms, they are located on top of a heat source while facing a cold sink (space vacuum).
 
-\begin{table*}[t]
+\begin{table}[H]
     \centering
-    \begin{tabular}{|p{0.25\linewidth}|p{0.25\linewidth}|}
-        \hline
-        \textbf{Interacting Systems} & \textbf{Primary Assignment} \\
-        \hline
-        Thermal Control  & Thermal regulation. \\
-        \hline
-        Onboard Computer (OBC) & Temperature monitoring.\\
-        \hline
-    \end{tabular}
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabularx}{\columnwidth}{@{}P{0.45\columnwidth}Y@{}}
+        \rowcolor{tableheader}
+        \multicolumn{1}{c}{\headingfont\bfseries Interacting Systems} & \multicolumn{1}{c}{\headingfont\bfseries Primary Assignment} \\
+        \addlinespace[4pt]
+        Thermal Control & Thermal regulation. \\
+        \addlinespace[4pt]
+        Onboard Computer (OBC) & Temperature monitoring.
+    \end{tabularx}
     \caption{Venetian-blind Louvers Interacting Systems}
     \label{tab:Venetian_blinds}
-\end{table*}
+\end{table}
 
-\subsubsection{System Multiplicity} \label{section:Venetian_Blinds}
+
+\subsection{Louver Sub-system Multiplicity} \label{section:louvers_multiplicity}
+
 The satellite may include one or more louvers and each one of them operates individually and send its own telemetry messages.
 
-\begin{table*}[t]
-    \centering
-    \begin{tabular}{|p{0.25\linewidth}|p{0.25\linewidth}|}
-        \hline
-        \textbf{Interface} & \textbf{Exist on System} \\
-        \hline
-        Telemetry & \checkmark \\
-        \hline
-        Command & $\times$ \\
-        \hline
-        Thermal &  \checkmark \\
-        \hline
-        Mechanical &  \checkmark\\
-        \hline
-        Power &  $\times$ \\
-        \hline
-    \end{tabular}
-    \caption{Venetian-blind Louvers Interacting Systems}
-    \label{tab:Venetian_blinds}
-\end{table*}
+\subsection{Louver Mechanical Assembly Components and Interfaces} \label{section:louvers_components}
 
-\subsubsection{Louver Mechanical Assembly Components and Interfaces} \label{section:Venetian_Blinds}
 Louvers are made of three main components
-\textbf{Structural frame} is mounted to a heat source within the satellite (internal or external),
-\textbf{Louver blades} are the elements that open and close, regulating heat convection and emissivity levels of the heat source of interest.
-\textbf{Bimetallic Springs} (made of two different aluminium alloys) are temperature-sensitive springs that connect the structural frame (in touch with the heat source) with the blades. They are bimetal to ensure that their bending will effectively open the blades at an angle.  The spring materials have a set point temperature between around -20 C and +50 C when the blades start to open. Then the blades go from fully closed to fully open within a 10-20 C control band [est et TO ADD REF] 
+\begin{itemize}
+    \item The structural frame is mounted to a heat source within the satellite (internal or external).
+    \item Louver blades are the elements that open and close, regulating heat convection and emissivity levels of the heat source of interest.
+    \item Bimetallic Springs (made of two different aluminium alloys) are temperature-sensitive springs that connect the structural frame (in touch with the heat source) with the blades. They are bimetal to ensure that their bending will effectively open the blades at an angle. The spring materials have a set point temperature between around \SI{-20}{\celsius} and \SI{50}{\celsius} when the blades start to open. Then the blades go from fully closed to fully open within a \SI{10}{\celsius} to \SI{20}{\celsius} control band~\parencite{SierraSpace_Passive_Thermal_Louvers_2025}.
+\end{itemize}
 
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabularx}{\columnwidth}{@{}P{0.45\columnwidth}Y@{}}
+        \rowcolor{tableheader}
+        \multicolumn{1}{c}{\headingfont\bfseries Interface} & \multicolumn{1}{c}{\headingfont\bfseries Applicable to subsystem} \\
+        \addlinespace[4pt]
+        Telemetry & \checkmark \\
+        \addlinespace[4pt]
+        Command & $\times$ \\
+        \addlinespace[4pt]
+        Thermal & \checkmark \\
+        \addlinespace[4pt]
+        Mechanical & \checkmark \\
+        \addlinespace[4pt]
+        Power & $\times$
+    \end{tabularx}
+    \caption{Venetian-blind Louvers Interface Overview}
+    \label{tab:louvers_interfaces}
+\end{table}
 
-
-
-
-\subsubsection{Mechanical Operation and Telemetry Messages } \label{section:Venetian_Blinds}
+\subsection{Mechanical Operation and Telemetry Messages} \label{section:louvers_operation}
 
 During periods of higher operational needs (e.g. increase of data transmission between the communication subsystem and the ground station) the source of interest heats up, consequently increasing the temperature within the louvers' structural frame. The bimetallic springs, being installed on the frame, will consequently change its state. As the springs receive heat, the metals that compose them will expand at different rates, which allows the blades to mechanically open. By rotating, they expose the heat source surface (high emissivity) to the cold sink so that more heat can be irradiated out into the space vacuum, without overheating the source and compromising critical operations.
+
 When the heat source and the structural frame cool down, consequently, the springs will compress to close the blades, reducing heat dissipation (low-emissivity) and keeping the source warmer during low-demand periods.
 
 
+\begin{table*}[t]
+    \centering 
+    \small
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabularx}{\textwidth}{@{}A{0.18\textwidth}A{0.16\textwidth}>{\raggedright\arraybackslash}XA{0.15\textwidth}A{0.15\textwidth}A{0.08\textwidth}@{}}
+        \rowcolor{tableheader}
+        \headingfont\bfseries Telemetry Message & \headingfont\bfseries Trigger & \headingfont\bfseries Notes & \headingfont\bfseries Sender & \headingfont\bfseries Receiver & \headingfont\bfseries Multiplicity \\
+        \addlinespace[4pt]
+        Louvers\_status\_info & Periodic \& out-of-range reach alert. & Temperature rise or drop outside the set range. Set range: \SI{-20}{\celsius} to \SI{50}{\celsius} & Louver assembly ID & Thermal Control \& OBC & 1 \\
+        \addlinespace[4pt]
+        Louvers\_health\_info & Periodic \& Mechanical fault alert. &  & Louver assembly ID & OBC & 1
+    \end{tabularx}
+    \caption{Venetian-blind Louvers Telemetry Message Overview}
+    \label{tab:louvers_tm_overview}
+\end{table*}
 
 
+\begin{table*}[t]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabularx}{\textwidth}{@{}A{0.22\textwidth}>{\raggedright\arraybackslash}XA{0.10\textwidth}A{0.18\textwidth}A{0.15\textwidth}@{}}
+        \rowcolor{tableheader}
+        \headingfont\bfseries ID & \headingfont\bfseries Description & \headingfont\bfseries Data type & \headingfont\bfseries Units & \headingfont\bfseries Update Periodicity \\
+        \addlinespace[4pt]
+        Louver\_assembly\_id & Distinctive louver identifier. & Int &  & 1 Hz \\
+        \addlinespace[4pt]
+        Frame\_temperature & Measured through a temperature sensor mounted on the louver's structural frame. & Float & \SI{}{\celsius} & Every 1 second \\
+        \addlinespace[4pt]
+        Blade\_angle & Measured through a position sensor. & Float & \SI{}{\degree} & Every 1 second \\
+        \addlinespace[4pt]
+        Emissivity\_state & Derived parameter from the position sensor. & Enum & Low, Medium, High & Every 1 second
+    \end{tabularx}
+    \caption{Venetian-blind Louvers Status Information}
+    \label{tab:louvers_status}
+\end{table*}
 
 
+\begin{table*}[t]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabularx}{\textwidth}{@{}A{0.22\textwidth}>{\raggedright\arraybackslash}XA{0.10\textwidth}A{0.18\textwidth}A{0.15\textwidth}@{}}
+        \rowcolor{tableheader}
+        \headingfont\bfseries ID & \headingfont\bfseries Description & \headingfont\bfseries Data type & \headingfont\bfseries Units & \headingfont\bfseries Update Periodicity \\
+        \addlinespace[4pt]
+        Louver\_assembly\_id & Distinctive louver identifier. & Int &  & 1 Hz \\
+        \addlinespace[4pt]
+        Health\_check & Overall structural integrity. & Enum & Nominal, Attention, Fault & Every 2 min \\
+        \addlinespace[4pt]
+        Blade\_mech\_compliance & The blades' smooth movement during operation. & Enum & Nominal, Attention, Fault & Every 2 min
+    \end{tabularx}
+    \caption{Venetian-blind Louvers Health Information}
+    \label{tab:louvers_health}
+\end{table*}
 
-\subsubsection{Power Generation System: Solar Panels} \label{section:Solar_Panels}
-A Solar Panel (also known as a photovoltaic cell or solar cell) is a flat surface device that directly transforms solar radiation into electrical power. Earth-orbiting satellites from LEO (Low Earth Orbit) to GEO (Geosynchronous Orbit) are the best candidates for solar panels as their power source.
-Solar panels are used to convert sunlight into electrical power that the satellite systems and subsystems use to support their operations during the mission lifetime. The solar energy converted by the panels can also be stored in onboard batteries that will provide electrical energy to the satellite systems while in the Earth’s shadow.
+\subsection{Power Generation System: Solar Panels} \label{section:solar_panels}
+
+A Solar Panel (also known as a photovoltaic cell or solar cell) is a flat surface device that directly transforms solar radiation into electrical power. Earth-orbiting satellites from LEO (Low Earth Orbit) to GEO (Geosynchronous Orbit) are the best candidates for solar panels as their power source.  Solar panels are used to convert sunlight into electrical power that the satellite systems and subsystems use to support their operations during the mission lifetime. The solar energy converted by the panels can also be stored in onboard batteries that will provide electrical energy to the satellite systems while in the Earth's shadow.
+
+\subsection{Location on Satellite and Systems Interaction} \label{section:solar_panels_location}
+
+Solar panels are placed on the satellite exterior, flat panels or on deployable paddles that unfold once the satellite reaches its intended orbit. Their positioning is meant to maximize their sun exposure for uninterrupted power generation before passing to the Earth's shadow.
+
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabularx}{\columnwidth}{@{}P{0.45\columnwidth}Y@{}}
+        \rowcolor{tableheader}
+        \multicolumn{1}{c}{\headingfont\bfseries Interacting Systems} & \multicolumn{1}{c}{\headingfont\bfseries Primary assignment} \\
+        \addlinespace[4pt]
+        ADCS computer & Controls attitude to improve the Sun incidence on panels. \\
+        \addlinespace[4pt]
+        Onboard Computer (OBC) & Collect telemetry data, monitor power budgeting, and health of the panels. \\
+        \addlinespace[4pt]
+        Power Conditioning and Distribution Unit (PCDU) & Collect electricity generated by solar panels and distribute it to the satellite systems and the battery. \\
+        \addlinespace[4pt]
+        Mechanical Structure & Provides a stable structural support and alignment with the satellite reference frame.
+    \end{tabularx}
+    \caption{Solar Panels Interacting Systems}
+    \label{tab:solar_interactions}
+\end{table}
+
+\subsection{Solar Panel Sub-system Multiplicity} \label{section:solar_multiplicity}
+
+Multiple. There are usually more than one solar panel (fixed on a satellite panel or deployable) and each one of them operates individually and sends its own telemetry messages.
+
+\subsection{Solar Panels Assembly Components and Interfaces} \label{section:solar_components}
+
+\paragraph{Mechanical Components}
+\begin{itemize}
+    \item The deployable array/structural frame is a wing-like structure that connects multiple solar panels. During launch the deployable array are stowed and deploy once in orbit. It maintains panel pointing while surviving launch loads and on-orbit Sun incidence.
+    \item The substrate is the panel backbone, is made of aluminium honeycomb core with composite or aluminum sheets, onto which the photovoltaic assembly is laced. It provides mechanical support, electrical insulation layers, and a flat surface to mount solar cells and interconnects.
+    \item Coverglasses are thin radiation-resistant glass plates laced on top of each cell to protect against UV, ionizing radiation, and micrometeoroid/particle impacts. They also include optical coatings to reduce reflection.
+    \item Interconnects are metallic conductors (ribbons or welds) that join cells into strings and connect strings to bus bars. Their geometry and material minimize resistive losses while allowing thermal expansion and mechanical flexibility.
+    \item Encapsulant is the adhesive/potting material between cells, coverglass, and substrate that bonds and seals them from the space environment. It helps the stack tolerate wide temperature swings, outgassing limits, and radiation without embrittling or losing adhesion.
+\end{itemize}
+\paragraph{Electrical Components}
+\begin{itemize}
+    \item Solar cells are the photovoltaic devices that convert incident sunlight into DC electrical power. Cells are arranged into series/parallel to achieve the required array voltage and current for powering the satellite bus.
+    \item Blocking diodes are placed in series with strings to prevent reverse current flow when parts of the array are shaded or damaged.
+    \item The junction box is the interface node where strings come together, housing terminations, blocking/bypass diodes, and connectors to the satellite power provider~\parencite{barrett1971spacecraft}.
+\end{itemize}
+
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabularx}{\columnwidth}{@{}P{0.45\columnwidth}Y@{}}
+        \rowcolor{tableheader}
+        \multicolumn{1}{c}{\headingfont\bfseries Interface} & \multicolumn{1}{c}{\headingfont\bfseries Applicable to subsystem} \\
+        \addlinespace[4pt]
+        Telemetry & \checkmark \\
+        \addlinespace[4pt]
+        Command & \checkmark  \\
+        \addlinespace[4pt]
+        Thermal & \checkmark  \\
+        \addlinespace[4pt]
+        Mechanical & \checkmark  \\
+        \addlinespace[4pt]
+        Power/Electrical & \checkmark
+    \end{tabularx}
+    \caption{Solar Panels Interface Overview}
+    \label{tab:solar_interfaces}
+\end{table}
+
+\subsection{Operation and Telemetry Messages}
+
+Sun radiation reaches at a determined angle the solar cells, where photons excite the electron in the semiconductor and generates a \SI{2}{\volt} voltage per cell.  The electrical path stability is kept by the connection between Cells and the coverglass, with the substrate. The junction box collects the transformed solar energy and the panel strings terminate and combine to form the array output lines that feed the satellite power system. From the junction box, the generated power goes to the power management and distribution unit, which regulates the voltage, charges the batteries, and switches power to the different systems such as communications, payload, and attitude control subsystems. During periods of sunlight, solar power runs the satellite and charges the batteries; while during period of shadows, the batteries are the only supplier of power to the bus~\parencite{reddy2008planning}. 
 
 
+\begin{table*}[t]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabularx}{\textwidth}{@{}A{0.22\textwidth}A{0.28\textwidth}>{\raggedright\arraybackslash}XA{0.14\textwidth}A{0.12\textwidth}A{0.10\textwidth}@{}}
+        \rowcolor{tableheader}
+        \headingfont\bfseries Telemetry Message & \headingfont\bfseries Trigger & \headingfont\bfseries Notes & \headingfont\bfseries Sender & \headingfont\bfseries Receiver & \headingfont\bfseries Multiplicity \\
+        \addlinespace[4pt]
+        SolarPanel\_config\_state & Periodic \& mode change occurrence. &  & Solar Panel & OBC & 1 \\
+        \addlinespace[4pt]
+        SolarPanel\_health\_info & Periodic \& Mechanical/Electrical fault alert. &  & Solar Panel & OBC & 1
+    \end{tabularx}
+    \caption{Solar Panel Telemetry Message Overview}
+    \label{tab:solar_panel_tm_overview}
+\end{table*}
 
-\textit{Location on Satellite and Systems Interactions} \label{section:Solar_Panels} \\
+\begin{table*}[t]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabularx}{\textwidth}{@{}A{0.22\textwidth}>{\raggedright\arraybackslash}XA{0.08\textwidth}A{0.08\textwidth}A{0.25\textwidth}@{}}
+        \rowcolor{tableheader}
+        \headingfont\bfseries ID & \headingfont\bfseries Description & \headingfont\bfseries Data type & \headingfont\bfseries Units & \headingfont\bfseries Update Periodicity \\
+        \addlinespace[4pt]
+        SolarPanel\_id & Distinctive solar panel identifier. & Int &  & 1 Hz \\
+        \addlinespace[4pt]
+        SolarPanel\_deploy & Indicates deployment event. & Enum & Nominal, Attention, Fault & Periodic (at deployment), 1 per panel \\
+        \addlinespace[4pt]
+        SolarPanel\_temp & Measured panel temperature from integrated sensors. & Float & \SI{}{\celsius} & Periodic, 1 Hz per sensor \\
+        \addlinespace[4pt]
+        SolarPanel\_incid & Measures the angle of incidence between the sun and the panel. & Enum & \SI{}{\degree} & Periodic, 1 per panel \\
+        \addlinespace[4pt]
+        SolarPanel\_ops\_mode & Indicates how solar panels process power. & Enum & Off, safe, eclipse, fixed V, max power & Prompt by mode change \& 1 Hz
+    \end{tabularx}
+    \caption{Solar Panel Configuration State}
+    \label{tab:solar_panel_configuration}
+\end{table*}
 
-
-\textit{System Multiplicity} \label{section:Solar_Panels} \\
-
-
-
-\textit{Solar Panels Mechanical Assembly Components and Interfaces} \label{section:Solar_Panels} \\
-
-
-\textit{Mechanical Operation and Telemetry Messages } \label{section:Solar_Panels} \\
-
-
-
-
+\begin{table*}[t]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabularx}{\textwidth}{@{}A{0.22\textwidth}>{\raggedright\arraybackslash}XA{0.10\textwidth}A{0.18\textwidth}A{0.12\textwidth}@{}}
+        \rowcolor{tableheader}
+        \headingfont\bfseries ID & \headingfont\bfseries Description & \headingfont\bfseries Data type & \headingfont\bfseries Units & \headingfont\bfseries Update Periodicity \\
+        \addlinespace[4pt]
+        SolarPanel\_id & Distinctive solar panel identifier. & Enum &  &  \\
+        \addlinespace[4pt]
+        SolarPanel\_temperature & Solar array electronics internal temperature. & Float & \SI{}{\celsius} & 10 Hz \\
+        \addlinespace[4pt]
+        SolarPanel\_voltage\_in & Solar array voltage input. & Float & \SI{}{\volt} & 10 Hz \\
+        \addlinespace[4pt]
+        SolarPanel\_current\_out & Solar panel output current. & Float & \SI{}{\milli\ampere} & 10 Hz \\
+        \addlinespace[4pt]
+        SolarPanel\_tot\_power & Total power generated by solar array. & Float & \SI{}{\watt} &  \\
+        \addlinespace[4pt]
+        Health\_check & Internal health monitoring. & Enum & Nominal, Attention, Fault & 10 Hz \\
+        \addlinespace[4pt]
+        SolarPanel\_degradation & Power degradation. & Float & Nominal, Attention, Fault & 0.1 Hz
+    \end{tabularx}
+    \caption{Solar Panel Health Information}
+    \label{tab:solar_panel_health}
+\end{table*}
 
  
 \end{multicols*}
-
 \end{document}
