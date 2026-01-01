@@ -571,18 +571,21 @@ WHERE \{ \newline
     \label{tab:query_examples}
 \end{table*}
 
-\section{Analysis} \label{sec:analysis}
+\section{Analysis and Discussion} \label{sec:analysis}
 
-TODO
+The conversion process effectively addressed several core challenges in representing UDDL data models within an OWL framework.  Our results show that by mapping Observables to disjoint OWL classes and applying closure axioms, reasoning engines can programmatically detect mismatches, such as a temperature sensor incorrectly defined as a source for mass data.  To resolve path-centric logic, we addressed UDDL's reliance on complex Participant Paths which requires a hypergraph representation that is not natively supported by OWL's binary structure.  The successful use of the $N$-ary Relation pattern to reify paths allowed the SPARQL engine to satisfy convergence requirements, such as ``Diamond Joins'', by binding multiple graph patterns to shared variables.  Finally, the sensitivity of the SPARQL queries where minor semantic modifications resulted in the return of an empty set confirms that the translation process preserves the rigor of the original UDDL specification.  This ensures that the system identifies only those data instances that satisfy the precise topological and semantic requirements of the interface.
 
-\section{Discussion} \label{sec:discussion}
+The mapping of UDDL constructs to OWL enables a shift from manual, subjective interface review toward objective, machine-interpretable verification.  Automating these tests and verifications reduces the effort required to detect semantically incoherent definitions long before physical integration, reducing unplanned effort and interoperability gaps.  These reasoning capablities are particularly valuable for large-scale systems with thousands or tens of thousands of complexly-related Entities and Associations, where manual review is infeasible.  For programs already aligned with FACE or SOSA that have semantically-enabled UDDL data models, these inference and verification capabilities may be immediately applicable using the ontology generation methods proposed in this work.
 
-Can we add constraints on constructions of ontologies that force conformance with UDDL data models?
+An assumption in this work is that we may only consider conceptual UDDL data model content, whereas platform Queries based on realizations of conceptual Entities and Associations are used in practice during logical and physical system integration.  While multiple realizations of a single conceptual Entity or Association may be used at the platform level, the traceability of core semantics is ultimately anchored at the conceptual level and therefore the methods proposed in this work are still applicable through realization relationships.  Future work may explore data representation approaches that allow for the integration of logical and platform level data models content, e.g., through a mapping to XML Schema Datatypes compatible with RDF and OWL, enabling more comprehensive syntactic and semantic verification and integration strategies.
 
+Mapping UDDL Domains and Domain-Specific Data Models (DSDMs) to distinct ontologies allows domain-specific vocabularies to become modular and reusable across different system models.  This aligns with strategic initiatives like MOSA and SOSA to ensure semantic context is preserved across disparate systems.  The reuse of DSDMs across systems and programs further enhances interoperability and reduces the effort required to create and maintain domain-specific ontologies and semantic verification pipelines similar to those proposed in this work.
+
+While the current methodology provides a robust foundation, further research is required to evaluate the scalability of reasoning over deep property chains in systems modeled with potentially thousands or tens of thousands of complexly-related Entities and Associations.  Automated ontology alignment techniques could further reduce the manual effort required to link reference system models with generated ontologies based UDDL data models, moving closer to fully autonomous semantic integration and verification pipelines.  Fuzzy SPARQL query matching techniques could further reduce the manual effort required to match UDDL query specifications to SPARQL query patterns and allow more flexibility in specifying and identifying congruent interface semantic specifications.
 
 \section{Conclusion} \label{sec:conclusion}
 
-TODO
+This paper has presented a formal mapping between the Universal Domain Description Language (UDDL) and Web Ontology Language (OWL) to address the challenge of data ambiguity in complex system integration.  While UDDL aims to unambiguously document data semantics, it lacks the native capability to verify whether those definitions are operationally meaningful within a specific domain.  By transforming UDDL models into OWL classes and axioms and converting UDDL Query specifications into SPARQL patterns, we provide a framework for automated semantic verification, validated using a representative satellite interface model.
 
 
 \section{Acknowledgments} \label{sec:acknowledgements}
