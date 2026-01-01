@@ -237,7 +237,7 @@ This paper proposes a formal mapping from UDDL models and semantic data specific
 
 \phantomsection
 \subsubsection{Keywords}
-Provide a few keywords, separated by commas.
+Universal Domain Description Language, UDDL, Web Ontology Language, OWL, Semantic Verification, MBSE, Interoperability, Ontology Alignment, SPARQL
 
 % =========================
 % ===== Main Content ======
@@ -248,6 +248,24 @@ Provide a few keywords, separated by commas.
 In systems engineering, rigorous definition of data and interfaces is not merely a documentation exercise, but a fundamental requirement for the composition, maintenance, and future reuse of complex systems~\parencite{fusco2020approach, madni2014system, Friedenthal2014, INCOSE2035}.  In traditional systems engineering, data dictionaries and interface control documents (ICDs) have served as the primary means of semantic capture~\parencite{Friedenthal2014, price2013semantic}.  However, these artifacts are often static in nature and reliant on human interpretation~\parencite{Friedenthal2014}.  The Universal Domain Description Language (UDDL)\textregistered{} Technical Specification recognizes that ``[adequately] describing domain data is a common problem in computer-based systems.  Typical approaches involve creating documentation to accompany artifacts \ldots in an attempt to capture the semantics of the data exchanged''~\parencite{OpenGroup2023UDDL}.
 
 Systems engineering practice has shifted in the past decade to emphasize open systems approaches and adoption of Intelligent Digital Twin-enabled systems, where machine-interpretable data is a prerequisite for modern sociotechnical system integration~\parencite{INCOSE2035}.  Strategic initiatives such as the Modular Open Systems Approach (MOSA) directives~\parencite{esper2019modular, zimmerman2019considerations, guertin2025sustained} also drive the need for semantic alignment, particularly for developing complex cyber-physical systems.  To support this, recent Department of Defense (DoD) directives emphasize the formalization of interface documentation through standards like Open Mission Systems (OMS)~\parencite{USAF_OMS}, the Future Airborne Capability Environment (FACE)\textregistered{}~\parencite{OpenGroup2017FACE}, and Sensor Open Systems Architecture (SOSA)\textregistered{}~\parencite{lane2024pyramid}.  However, current MOSA-aligned workflows rely on domain experts to manually judge the validity of semantic specifications.  This manual process is a significant bottleneck in large-scale system integration.  By bridging UDDL with Semantic Web Technologies, we transform interface review from a subjective manual exercise into more objective, machine-interpretable and automatable tasks.
+
+\begin{table*}[t]
+  \centering
+  \renewcommand{\arraystretch}{1.5}
+  \begin{tabularx}{\textwidth}{@{}A{0.25\textwidth}A{0.35\textwidth}>{\raggedright\arraybackslash}X@{}}
+      \rowcolor{tableheader}
+      \headingfont\bfseries Model Level & \headingfont\bfseries Description & \headingfont\bfseries Semantic Focus \\
+      \addlinespace[4pt]
+      Conceptual Data Model (CDM) & Defines the complete semantics of all Entities and Associations. & Concepts and relationships.  Entities and Associations are typed with Observables (traits which can be observed but not further characterized). \\
+      \addlinespace[4pt]
+      Logical Data Model (LDM) & Refines Entities/Associations with Measurements. & Quantification.  Further characterizes Observables by adding frames of reference, units, and value types (e.g., Integer, Real). \\
+      \addlinespace[4pt]
+      Platform Data Model (PDM) & Refines elements with Platform Data Types. & Implementation.  Additional characterization of logical measurements to include bit-level precision and language bindings in terms of Interface Definition Language (IDL).
+  \end{tabularx}
+  \caption{UDDL Multi-level Modeling Approach.}
+  \label{tab:uddl_levels}
+\end{table*}
+
 
 The failure of traditional, document-based approaches to capture data semantics stems from their inability to formally and precisely bind meaning to structure, i.e., to attach semantics to syntax~\parencite{price2013semantic, Friedenthal2014}.  Ambiguity often arises from the heterogeneous nature of documentation across disparate systems, ranging from avionics to the Industrial Internet of Things (IIoT)~\parencite{mzili2025interoperability, noura2019interoperability}.  For example, a variable labeled \texttt{alt} in a ICD may imply ``altitude'', but it may fail to specify a reference frame (e.g., ellipsoidal vs.\ geoidal), the unit of measure (e.g., meters vs.\ feet), or the domain (e.g., air operations vs.\ ground).  While the integration of data semantics is well-studied in the context of Knowledge Graphs (KGs) and ontologies, UDDL data models remain under-studied in systems and interoperability literature.  Nevertheless, UDDL was developed expressly to fill the documentation gap described above, its objective being to ``formally document the meaning of data with the goal of eliminating ambiguity''~\parencite{OpenGroup2023UDDL}.  It achieves this by providing the means to create conceptual building blocks that are then used to construct formal definitions of the meaning of data flowing through interfaces.
 
@@ -263,53 +281,36 @@ Despite development and growing industry use of UDDL and its predecessor data mo
 
 \section{Background} \label{sec:background}
 
+\begin{table*}[t]
+  \centering
+  \renewcommand{\arraystretch}{1.5}
+  \begin{tabularx}{\textwidth}{@{}A{0.20\textwidth}A{0.40\textwidth}>{\raggedright\arraybackslash}X@{}}
+      \rowcolor{tableheader}
+      \headingfont\bfseries Element Name & \headingfont\bfseries Construction & \headingfont\bfseries Example \\
+      \addlinespace[4pt]
+      Conceptual Data Model & Packages conceptual model elements in a single collection. & \texttt{Observables} (a collection of all Observable data model elements). \\
+      \addlinespace[4pt]
+      Domain & A collection of Basis Entities. & \texttt{Sensing}; includes the \texttt{Object} Basis Entity. \\
+      \addlinespace[4pt]
+      Basis Entity & Unique axiomatic domain concept. & \texttt{Place} \\
+      \addlinespace[4pt]
+      Observable & Unique trait which can be observed but not further characterized. & \texttt{Position} \\
+      \addlinespace[4pt]
+      Entity & A domain concept characterized by a set of composed Observables and/or other Entities.  Can Specialize another Entity or Domain Entity. & \texttt{Person}; composes \texttt{Identifier} and \texttt{Position} Observables. \\
+      \addlinespace[4pt]
+      Association & A domain concept that is expressible only through the relation of two or more Participants (Entities and/or Observables).  Associations may also compose a set of Entities and/or Observables and Specialize another Entity or Domain Entity. & \texttt{Ownership}; composes \texttt{Duration} and associates \texttt{Person}, \texttt{Car} Entities through \texttt{owner}, \texttt{asset} Participant roles.
+  \end{tabularx}
+  \caption{Core UDDL Conceptual Meta-Model Elements.  CDM, Domain, Basis Entity, and Observable examples are referenced from \cite{sdm_v3_1_15}.} \label{tab:cdm_elements}
+\end{table*}
+
 \subsection{UDDL} \label{section:introduction-uddl-overview}
 Any system developed against the FACE and SOSA technical standards necessarily use UDDL data models for interface specification.  UDDL utilizes a multi-level modeling approach summarized in Table \ref{tab:uddl_levels}~\parencite{OpenGroup2023UDDL}.
-
-\begin{table*}[t]
-    \centering
-    \renewcommand{\arraystretch}{1.5}
-    \begin{tabularx}{\textwidth}{@{}A{0.25\textwidth}A{0.35\textwidth}>{\raggedright\arraybackslash}X@{}}
-        \rowcolor{tableheader}
-        \headingfont\bfseries Model Level & \headingfont\bfseries Description & \headingfont\bfseries Semantic Focus \\
-        \addlinespace[4pt]
-        Conceptual Data Model (CDM) & Defines the complete semantics of all Entities and Associations. & Concepts and relationships.  Entities and Associations are typed with Observables (traits which can be observed but not further characterized). \\
-        \addlinespace[4pt]
-        Logical Data Model (LDM) & Refines Entities/Associations with Measurements. & Quantification.  Further characterizes Observables by adding frames of reference, units, and value types (e.g., Integer, Real). \\
-        \addlinespace[4pt]
-        Platform Data Model (PDM) & Refines elements with Platform Data Types. & Implementation.  Additional characterization of logical measurements to include bit-level precision and language bindings in terms of Interface Definition Language (IDL).
-    \end{tabularx}
-    \caption{UDDL Multi-level Modeling Approach.}
-    \label{tab:uddl_levels}
-\end{table*}
 
 This paper will focus primarily on the Conceptual Data Model (CDM), as the meaning (i.e., the semantics) of the data are completely described by conceptual elements and their relationships.  We will draw upon lower-level Logical and Platform Data Model concepts to justify design decisions to ensure the mappings are compatible with lower-level refinements.  Therefore, we will review only the conceptual meta-model elements and their relationships.
 
 Table \ref{tab:cdm_elements} informally summarizes the construction of relevant conceptual meta-model elements.  All elements are assumed to have a globally unique name as well as an optional textual description field, enfoced via Object Constraint Language (OCL) constraints.  A Conceptual Data Model (CDM) is a top-level package that collects and organizes all conceptual model elements.  CDMs can be nested to create hierarchies or other organizational structures and multiple CDMs may be included in a single root-level Data Model.  A Domain collects a set of Basis Entities, relating to well understood concepts by practitioners within a particular domain~\parencite{OpenGroup2023UDDL}.  Basis Entities represent unique concepts that are not expressible simply through model structure, e.g., the concepts of ``Minimum'' and ``Maximum''~\parencite{sdm_v3_1_15}.  Observables are characteristics that can be observed or measured, e.g., Position, Orientation, Identifier.  Notice the examples for Basis Entity and Observable in table \ref{tab:cdm_elements} -- a ``Position'' is something that can be measured and is therefore an Observable while ``Place'' is a concept and not meaningfully measurable and is therefore a Basis Entity (i.e., you can not measure ``Place'' directly, but you could measure the Position of a Place, or the Extent of a Place, Position and Extent being Observables).  Entities represent a domain concept in terms of their Observables and other composed conceptual Entities.  Associations are themselves Entities but which also include two or more Participants that can associate model paths terminating in either an Entity or Observable.  The Participants in the Association are characterized through Participant Paths which are a sequence of nodes that specify an arbitrary path through the network of related Entities and Associations and follow traversal rules, namely that Compositions can be traversed in the direction of the composition and Participants of Associations can be traversed bidirectionally.
 
 Associations of Participant Paths require a hypergraph representation of a UDDL data model, i.e., relationships are expressed not just between nodes of the graph, but between higher-level graph structures as well.
-
-\begin{table*}[t]
-    \centering
-    \renewcommand{\arraystretch}{1.5}
-    \begin{tabularx}{\textwidth}{@{}A{0.20\textwidth}A{0.40\textwidth}>{\raggedright\arraybackslash}X@{}}
-        \rowcolor{tableheader}
-        \headingfont\bfseries Element Name & \headingfont\bfseries Construction & \headingfont\bfseries Example \\
-        \addlinespace[4pt]
-        Conceptual Data Model & Packages conceptual model elements in a single collection. & \texttt{Observables} (a collection of all Observable data model elements). \\
-        \addlinespace[4pt]
-        Domain & A collection of Basis Entities. & \texttt{Sensing}; includes the \texttt{Object} Basis Entity~\parencite{sdm_v3_1_15}. \\
-        \addlinespace[4pt]
-        Basis Entity & Unique axiomatic domain concept. & \texttt{Place}~\parencite{sdm_v3_1_15} \\
-        \addlinespace[4pt]
-        Observable & Unique trait which can be observed but not further characterized. & \texttt{Position}~\parencite{sdm_v3_1_15} \\
-        \addlinespace[4pt]
-        Entity & A domain concept characterized by a set of composed Observables and/or other Entities.  Can Specialize another Entity or Domain Entity. & \texttt{Person}; composes \texttt{Identifier} and \texttt{Position} Observables. \\
-        \addlinespace[4pt]
-        Association & A domain concept that is expressible only through the relation of two or more Participants (Entities and/or Observables).  Associations may also compose a set of Entities and/or Observables and Specialize another Entity or Domain Entity. & \texttt{Ownership}; composes \texttt{Duration} and associates \texttt{Person}, \texttt{Car} Entities through \texttt{owner}, \texttt{asset} Participant roles.
-    \end{tabularx}
-    \caption{Core UDDL Conceptual Meta-Model Elements.} \label{tab:cdm_elements}
-\end{table*}
 
 \begin{table*}[t]
     \centering
