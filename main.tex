@@ -27,6 +27,7 @@
 \graphicspath{{./}{figures/}}
 \usepackage{float}
 \usepackage{amsmath}
+\usepackage[table]{xcolor}
 \usepackage{tikz}
 
 % ---------- Captions & float spacing ----------
@@ -50,7 +51,6 @@
 \usepackage{tabularx}
 \usepackage{enumitem}
 \setlist{nosep}
-\usepackage[table]{xcolor}
 \definecolor{tableheader}{HTML}{D9D9D9}
 \newcolumntype{P}[1]{>{\sffamily\centering\arraybackslash}p{#1}}
 \newcolumntype{Y}{>{\sffamily\centering\arraybackslash}X}
@@ -210,10 +210,10 @@
   \authorcard{Author One}{Organization}{Street Address}{City, Province, Postal}{author.one@email.com} &
   \authorcard{Author Two}{Organization}{Street Address}{City, Province, Postal}{author.two@email.com} &
   \authorcard{Author Three}{Organization}{Street Address}{City, Province, Postal}{author.three@email.com} \\
-  \multicolumn{3}{@{}c@{}}{\rule{0pt}{0.9\baselineskip}} \\[-0.2\baselineskip]
+  \multicolumn{3}{@{}c@{}}{} \\[-0.2\baselineskip]
   \authorcard{Author Four}{Organization}{Street Address}{City, Province, Postal}{author.four@email.com} &
   \authorcard{Author Five}{Organization}{Street Address}{City, Province, Postal}{author.five@email.com} &
-  \authorcard{Author Six}{Organization}{Street Address}{City, Province, Postal}{author.six@email.com}
+  \authorcard{Author Six}{Organization}{Street Address}{City, Province, Postal}{author.six@email.com} \\
 \end{tabular*}
 \addvspace{.75in}
 
@@ -478,7 +478,7 @@ Table \ref{table:ast_mapping} summarizes how the primary components of a UDDL qu
   \label{fig:satellite_ontology}
 \end{figure*}
 
-We generated example Interface Control Documents (ICDs) based on a generic satellite design (TODO: provided in appendix or summarized in table).  Based on these ICDs, we then created a reference satellite OWL ontology in Prot\'eg\'e and a UDDL data model using the PHENOM\textregistered{} modeling environment, and exported to XMI~\parencite{musen2015protege, phenom}.  The reference satellite ontology captured the structure of the satellite system components and their relationships from a system viewpoint.  The UDDL data model captured the interface semantics using the UDDL Query Language backed by a conceptual Entity and Association data model.  Diagrams of the ontology and data model are shown in Figure \ref{fig:satellite_ontology} and Figure \ref{fig:satellite_data_model}, respectively.  The UDDL data model contains examples of Generalizations, Entities with multiple compositions, Associations with simple and complex participant paths, as well as UDDL Query specifications.  The FACE Shared Data Model (SDM)~\parencite{sdm_v3_1_15} provides examples for Domain, Basis Entity, and Observable model elements.
+We generated example Interface Control Documents (ICDs) based on a generic satellite design, provided in the \nameref{sec:Appendix}.  Based on these ICDs, we then created a reference satellite OWL ontology in Prot\'eg\'e and a UDDL data model using the PHENOM\textregistered{} modeling environment, and exported to XMI~\parencite{musen2015protege, phenom}.  The reference satellite ontology captured the structure of the satellite system components and their relationships from a system viewpoint.  The UDDL data model captured the interface semantics using the UDDL Query Language backed by a conceptual Entity and Association data model.  Diagrams of the ontology and data model are shown in Figure \ref{fig:satellite_ontology} and Figure \ref{fig:satellite_data_model}, respectively.  The UDDL data model contains examples of Generalizations, Entities with multiple compositions, Associations with simple and complex participant paths, as well as UDDL Query specifications.  The FACE Shared Data Model (SDM)~\parencite{sdm_v3_1_15} provides examples for Domain, Basis Entity, and Observable model elements.  The set of Queries generated from the example satellite ICDs are shown in Table \ref{tab:query_examples}.
 
 
 
@@ -489,18 +489,13 @@ We generated example Interface Control Documents (ICDs) based on a generic satel
   \label{fig:satellite_data_model}
 \end{figure*}
 
-The set of Queries generated from the example satellite ICDs are shown in Table \ref{tab:query_examples}.  Some queries are intentionally designed to be ``non-sensical'' against the reference ontology to demonstrate reasoning and inference for consistency checking on systems.
-
 The UDDL data model was transformed into an OWL ontology using the mapping methodology presented in \nameref{sec:uddl2owl_mapping}.  The conversion was implemented in Python by processing the OWL and UDDL data model XML representations.  The generated ontology was then loaded into Prot\'eg\'e with the HermiT reasoner version 1.4.3 configured~\parencite{glimm2014hermit}.  After loading the ontology, the reasoner was started.  The Prot\'eg\'e environment was used to visualize and execute SPARQL queries against the ontology.  The Snap SPARQL plugin was used to allow queries to be run over inferred elements of the ontology~\parencite{horridge2015snap}.  An ontology alignment was manually generated between the classes in the reference and generated ontologies to enable reasoning across both.
 
-Instances for system components as well as observations were created.  An Observation OWL class was created to allow named individuals representing measurements of and inferences on Observables.  We then executed each SPARQL query against the aligned ontologies and individuals.
-
+To verify the semantic validity, we created instances for system data observations.  An Observation OWL class was created to allow named individuals representing measurements of Observables in the context implied by the UDDL Query specifications.  We then converted all the UDDL Query specifications into SPARQL queries (shown in Table \ref{tab:query_examples}) and executed them against the generated ontology and individuals.  UDDL Queries were then slightly modified to imply different semantics and run against the original set of individuals.
 
 \section{Results} \label{sec:results}
 
-The generated ontology was loaded into Prot\'eg\'e with the HermiT reasoner configured.  The reasoner verified that there were no logical contradictions.
-
-``Draw''/match the semantic paths from the UDDL queries onto the ontology.  We would like to create entity instances that demonstrate how to check a system-level connectivity diagram by using the UDDL query specifications.
+The generated ontology was loaded into Prot\'eg\'e with the HermiT reasoner configured.  The reasoner verified that there were no logical contradictions.  Table \ref{tab:query_examples} shows the results of the UDDL Query specification conversion to SPARQL queries against the generated ontology.  All SPARQL queries returned the expected sets of individuals indicating that the system contains the expected data observations based on the interfaces specifications.  Any changes to the UDDL Query specifications resulted in SPARQL queries that returned no results indicating the expected semantic inconsistency (i.e., interfaces that require data that is not present in the system).
 
 \begin{table*}[t]
     \centering

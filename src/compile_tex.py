@@ -37,10 +37,224 @@ def run_command(command):
         return False
     return True
 
-def compile_pdf(input_file, output_file, build_dir, input_basename, jobname, env):
+def count_words(input_file):
+    """Count words in LaTeX document, excluding references, appendices, and TOC.
+    
+    According to INCOSE guidelines:
+    - Should not exceed 7,000 words
+    - Shall not be less than 2,000 words
+    - Excludes: references, appendices, table of contents
+    - Includes: exhibits and tables
+    """
+    if not check_command_available('texcount'):
+        print("Warning: texcount not available, skipping word count")
+        return None
+    
+    try:
+        import tempfile
+        import re
+        
+        # Read the input file and exclude appendices
+        with open(input_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Find where appendices start
+        # Look for \appendix, \section{Appendix}, or \begin{appendices}
+        appendix_patterns = [
+            r'\\appendix\b',
+            r'\\section\{[^}]*[Aa]ppendix[^}]*\}',
+            r'\\begin\{appendices\}',
+        ]
+        
+        appendix_start = None
+        for pattern in appendix_patterns:
+            match = re.search(pattern, content)
+            if match:
+                appendix_start = match.start()
+                break
+        
+        # If appendix found, truncate content before it
+        if appendix_start is not None:
+            content = content[:appendix_start]
+            # Also exclude references section if it comes before appendices
+            # (though it usually comes after)
+        
+        # Also exclude references section (\printbibliography or \begin{thebibliography})
+        ref_patterns = [
+            r'\\printbibliography',
+            r'\\begin\{thebibliography\}',
+            r'\\section\{[^}]*[Rr]eferences?[^}]*\}',
+        ]
+        
+        ref_start = None
+        for pattern in ref_patterns:
+            match = re.search(pattern, content)
+            if match:
+                ref_start = match.start()
+                break
+        
+        if ref_start is not None:
+            content = content[:ref_start]
+        
+        # Create a temporary file with the filtered content
+        # Use the same directory as input file to resolve relative paths if any
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.tex', delete=False, encoding='utf-8', dir=os.path.dirname(input_file)) as tmp_file:
+            # Add texcount directives to ensure tables are counted and metadata is handled correctly
+            directives = [
+                "%TC:envir table 0 1",
+                "%TC:envir table* 0 1",
+                "%TC:envir tabular 1 1",
+                "%TC:envir tabular* 1 1",
+                "%TC:envir tabularx 2 1",
+                "%TC:envir longtable 1 1",
+                "%TC:macro \\miniheading [1]",
+                "%TC:macro \\colfig [0]",
+                "%TC:macro \\authorcard [0,0,0,0,0]",
+                "%TC:macro \\authorbioentry [0,0,0]"
+            ]
+            tmp_file.write('\n'.join(directives) + '\n')
+            tmp_file.write(content)
+            tmp_file_path = tmp_file.name
+        
+        try:
+            # Use texcount to count words
+            # -sum: Sum all counts
+            # -inc: Include subfiles
+            # -nosub: Don't count subcounts separately  
+            # -merge: Merge all counts
+            # -q: Quiet mode
+            cmd = [
+                'texcount',
+                '-sum',
+                '-inc',
+                '-nosub',
+                '-merge',
+                '-q',
+                tmp_file_path
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            
+            if result.returncode == 0:
+                output = result.stdout.strip()
+                
+                # Parse the output - texcount typically outputs something like:
+                # "Sum count: 1234"
+                # or "Words in text: 1234"
+                
+                # Try to find the total word count
+                patterns = [
+                    r'Sum count:\s*(\d+)',
+                    r'Words in text:\s*(\d+)',
+                    r'Total\s+(\d+)',
+                ]
+                
+                for pattern in patterns:
+                    match = re.search(pattern, output, re.IGNORECASE)
+                    if match:
+                        words = int(match.group(1).replace(',', ''))
+                        return words
+                
+                # Fallback: find the last number in the output (usually the total)
+                numbers = re.findall(r'\b(\d{1,3}(?:,\d{3})*)\b', output)
+                if numbers:
+                    # Get the largest number (likely the total)
+                    max_num = max(int(n.replace(',', '')) for n in numbers)
+                    return max_num
+            
+            return None
+        finally:
+            # Clean up temporary file
+            try:
+                os.unlink(tmp_file_path)
+            except OSError:
+                pass
+        
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError, ValueError, UnicodeDecodeError) as e:
+        print(f"Warning: Could not count words: {e}")
+        return None
+
+def count_abstract_words(input_file):
+    """Count words in the abstract section.
+    
+    Abstract should not exceed 300 words.
+    """
+    if not check_command_available('texcount'):
+        return None
+    
+    try:
+        import tempfile
+        import re
+        
+        with open(input_file, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        # Try to find abstract using \miniheading{Abstract} (used in template)
+        # Ends at next \phantomsection, \miniheading, \section, or \subsubsection
+        pattern = r'\\miniheading\{Abstract\}(.*?)(?:\\phantomsection|\\miniheading|\\section|\\subsection|\\subsubsection)'
+        match = re.search(pattern, content, re.DOTALL)
+        
+        # Fallback to standard LaTeX abstract environment
+        if not match:
+            pattern = r'\\begin\{abstract\}(.*?)\\end\{abstract\}'
+            match = re.search(pattern, content, re.DOTALL)
+            
+        if not match:
+            return None
+            
+        abstract_text = match.group(1)
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.tex', delete=False, encoding='utf-8', dir=os.path.dirname(input_file)) as tmp_file:
+            tmp_file.write(abstract_text)
+            tmp_file_path = tmp_file.name
+            
+        try:
+            # Use texcount to count words in the snippet
+            cmd = [
+                'texcount',
+                '-sum',
+                '-merge',
+                '-q',
+                tmp_file_path
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            
+            if result.returncode == 0:
+                output = result.stdout.strip()
+                # Parse output
+                patterns = [
+                    r'Sum count:\s*(\d+)',
+                    r'Words in text:\s*(\d+)',
+                    r'Total\s+(\d+)',
+                ]
+                
+                for pattern in patterns:
+                    match = re.search(pattern, output, re.IGNORECASE)
+                    if match:
+                        return int(match.group(1).replace(',', ''))
+                        
+                # Fallback
+                numbers = re.findall(r'\b(\d{1,3}(?:,\d{3})*)\b', output)
+                if numbers:
+                    return max(int(n.replace(',', '')) for n in numbers)
+                    
+            return None
+        finally:
+            try:
+                os.unlink(tmp_file_path)
+            except OSError:
+                pass
+                
+    except Exception as e:
+        print(f"Warning: Could not count abstract words: {e}")
+        return None
+
+def compile_pdf(input_file, output_file, build_dir, input_basename, jobname, env, verbose=False):
     """Compile LaTeX to PDF using pdflatex and biber."""
     pdflatex_cwd = build_dir
-    print(f"Running pdflatex in: {pdflatex_cwd}")
+    if verbose:
+        print(f"Running pdflatex in: {pdflatex_cwd}")
 
     # Use input_file (full path) if available, otherwise input_basename
     tex_input = input_file if os.path.isabs(input_file) else input_basename
@@ -50,21 +264,53 @@ def compile_pdf(input_file, output_file, build_dir, input_basename, jobname, env
     cmd_pdflatex = ['pdflatex', '-interaction=nonstopmode', '-output-directory', '.', tex_input]
     cmd_biber = ['biber', jobname]
     
+    def run_with_output(cmd, step_name, cwd, env, verbose, check_pdf=False):
+        """Run command and handle output based on verbose flag."""
+        if verbose:
+            print(f"--- {step_name} ---")
+            result = subprocess.run(cmd, cwd=cwd, env=env, check=False)
+        else:
+            # Silent mode - only capture output, don't print anything unless there's an error
+            result = subprocess.run(cmd, cwd=cwd, env=env, check=False, 
+                                  capture_output=True, text=True)
+            if result.returncode != 0:
+                # Check if PDF was successfully created (for pdflatex runs)
+                pdf_created = False
+                if check_pdf:
+                    pdf_path = os.path.join(cwd, f"{jobname}.pdf")
+                    pdf_created = os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 0
+                
+                # Only show output if PDF was NOT created (actual failure)
+                if not pdf_created:
+                    # Check if there are actual errors (not just warnings)
+                    output = result.stdout + result.stderr
+                    has_error = any(keyword in output for keyword in [
+                        '! LaTeX Error',
+                        '! Undefined control sequence',
+                        '! Missing',
+                        'Fatal error',
+                        'Emergency stop',
+                        '! Emergency stop'
+                    ])
+                    if has_error:
+                        # Only print on actual errors when PDF wasn't created
+                        print(f"Error during {step_name}:")
+                        print(result.stdout)
+                        if result.stderr:
+                            print(result.stderr)
+        return result
+    
     # Run pdflatex (1st run)
-    print("--- 1st pdflatex run ---")
-    subprocess.run(cmd_pdflatex, cwd=pdflatex_cwd, env=env, check=True)
+    result = run_with_output(cmd_pdflatex, "1st pdflatex run", pdflatex_cwd, env, verbose, check_pdf=True)
          
     # Run biber
-    print("--- biber run ---")
-    subprocess.run(cmd_biber, cwd=pdflatex_cwd, env=env, check=True)
+    result = run_with_output(cmd_biber, "biber run", pdflatex_cwd, env, verbose, check_pdf=False)
     
     # Run pdflatex (2nd run)
-    print("--- 2nd pdflatex run ---")
-    subprocess.run(cmd_pdflatex, cwd=pdflatex_cwd, env=env, check=True)
+    result = run_with_output(cmd_pdflatex, "2nd pdflatex run", pdflatex_cwd, env, verbose, check_pdf=True)
     
     # Run pdflatex (3rd run)
-    print("--- 3rd pdflatex run ---")
-    subprocess.run(cmd_pdflatex, cwd=pdflatex_cwd, env=env, check=True)
+    result = run_with_output(cmd_pdflatex, "3rd pdflatex run", pdflatex_cwd, env, verbose, check_pdf=True)
     
     # Move PDF to output location if it exists
     pdf_path = os.path.join(build_dir, f"{jobname}.pdf")
@@ -76,7 +322,16 @@ def compile_pdf(input_file, output_file, build_dir, input_basename, jobname, env
         shutil.copy2(pdf_path, output_file) # Use copy instead of move to keep build artifact? Or move? 
         # Original script used move.
         shutil.move(pdf_path, output_file)
-        print(f"PDF moved to: {output_file}")
+        if verbose:
+            print(f"PDF moved to: {output_file}")
+    elif os.path.exists(output_file):
+        if verbose:
+            print(f"PDF already at output location: {output_file}")
+    else:
+        # Check if PDF exists in build_dir (might be named differently)
+        if not os.path.exists(pdf_path):
+            print(f"Error: PDF not found at {pdf_path} or {output_file}")
+            sys.exit(1)
 
 def compile_html(input_file, output_file, build_dir, input_basename):
     """Compile LaTeX to HTML using pandoc."""
@@ -147,14 +402,17 @@ def main():
     parser.add_argument("output_file", help="Output PDF file")
     parser.add_argument("--build-dir", help="Directory to run build in", default=None)
     parser.add_argument("--extra-resource", action="append", help="Extra files to make available to latex")
+    parser.add_argument("-v", "--verbose", action="store_true", 
+                       help="Show full output from pdflatex and biber")
     
     args = parser.parse_args()
 
     input_file = os.path.abspath(args.input_file)
     output_file = os.path.abspath(args.output_file)
     
-    print(f"Input file: {input_file}")
-    print(f"Output file: {output_file}")
+    if args.verbose:
+        print(f"Input file: {input_file}")
+        print(f"Output file: {output_file}")
 
     input_basename = os.path.basename(input_file)
     jobname = os.path.splitext(input_basename)[0]
@@ -171,19 +429,57 @@ def main():
 
     if args.extra_resource:
         for res in args.extra_resource:
-            if os.path.exists(res):
+            # Check if resource exists, or if it's in a figures/ subdirectory
+            res_abspath = os.path.abspath(res)
+            res_dir = os.path.dirname(res_abspath)
+            res_basename = os.path.basename(res_abspath)
+            
+            # Check if there's a figures/ subdirectory with the same file
+            figures_path = os.path.join(res_dir, 'figures', res_basename)
+            if os.path.exists(figures_path):
+                # Use the file from figures/ subdirectory
+                source_path = figures_path
+                dest_dir = os.path.join(build_dir, 'figures')
+                os.makedirs(dest_dir, exist_ok=True)
+                dest_path = os.path.join(dest_dir, res_basename)
+                if args.verbose:
+                    print(f"Copying resource {source_path} to {dest_path} (from figures/ subdirectory)")
+                shutil.copy2(source_path, dest_path)
+            elif os.path.exists(res):
                  # Copy to build_dir so latex can find it
-                 print(f"Copying resource {res} to {build_dir}")
-                 shutil.copy2(res, build_dir)
+                 # Preserve directory structure if the resource path includes subdirectories
+                 parent_dir = os.path.basename(os.path.dirname(res_abspath))
+                 
+                 # If the parent directory is not empty and is a meaningful subdirectory
+                 # (not just the build root), preserve it
+                 if parent_dir and parent_dir not in ('', '.', '..'):
+                     # Check if this looks like a subdirectory we should preserve
+                     # (e.g., 'figures', 'images', etc.)
+                     dest_dir = os.path.join(build_dir, parent_dir)
+                     os.makedirs(dest_dir, exist_ok=True)
+                     dest_path = os.path.join(dest_dir, res_basename)
+                     if args.verbose:
+                         print(f"Copying resource {res} to {dest_path} (preserving {parent_dir}/ structure)")
+                     shutil.copy2(res, dest_path)
+                 else:
+                     # Simple file copy to build_dir root
+                     if args.verbose:
+                         print(f"Copying resource {res} to {build_dir}")
+                     shutil.copy2(res, build_dir)
             else:
-                 print(f"Warning: Resource {res} not found")
+                 if args.verbose:
+                     print(f"Warning: Resource {res} not found")
+                 else:
+                     print(f"Error: Resource {res} not found")
+                     sys.exit(1)
 
     # Check if LaTeX tools are available
     has_pdflatex = check_command_available('pdflatex')
     has_biber = check_command_available('biber')
     
     if has_pdflatex and has_biber:
-        print("LaTeX tools (pdflatex and biber) detected. Using PDF compilation.")
+        if args.verbose:
+            print("LaTeX tools (pdflatex and biber) detected. Using PDF compilation.")
         # Update env
         env = os.environ.copy()
         path_sep = os.pathsep
@@ -206,9 +502,41 @@ def main():
 
         env['BIBINPUTS'] = f".{path_sep}{build_dir}{path_sep}{source_dir}{path_sep}" + current_bibinputs
         
-        print(f"TEXINPUTS: {env['TEXINPUTS']}")
+        if args.verbose:
+            print(f"TEXINPUTS: {env['TEXINPUTS']}")
         
-        compile_pdf(input_file, output_file, build_dir, input_basename, jobname, env)
+        compile_pdf(input_file, output_file, build_dir, input_basename, jobname, env, args.verbose)
+        
+        # Count words and report
+        print("\n" + "="*70)
+        print("WORD COUNT REPORT")
+        print("="*70)
+        word_count = count_words(input_file)
+        if word_count is not None:
+            print(f"Total word count (excluding references, appendices, TOC): {word_count:,}")
+            print(f"\nINCOSE Guidelines:")
+            print(f"  Minimum: 2,000 words")
+            print(f"  Maximum: 7,000 words")
+            if word_count < 2000:
+                print(f"  ⚠️  WARNING: Document is {2000 - word_count:,} words below minimum!")
+            elif word_count > 7000:
+                print(f"  ⚠️  WARNING: Document is {word_count - 7000:,} words above maximum!")
+            else:
+                print(f"  ✓ Document length is within acceptable range")
+        else:
+            print("Could not determine word count")
+            
+        # Abstract word count
+        abstract_count = count_abstract_words(input_file)
+        if abstract_count is not None:
+            print(f"\nAbstract word count: {abstract_count:,}")
+            print(f"  Maximum: 300 words")
+            if abstract_count > 300:
+                print(f"  ⚠️  WARNING: Abstract is {abstract_count - 300:,} words above maximum!")
+            else:
+                print(f"  ✓ Abstract length is within acceptable range")
+        
+        print("="*70 + "\n")
     else:
         print("LaTeX tools (pdflatex and/or biber) not detected.")
         if not check_command_available('pandoc'):
