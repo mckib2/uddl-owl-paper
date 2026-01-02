@@ -262,7 +262,7 @@ Systems engineering practice has shifted in the past decade to emphasize open sy
       \addlinespace[4pt]
       Platform Data Model (PDM) & Refines elements with Platform Data Types. & Implementation.  Additional characterization of logical measurements to include bit-level precision and language bindings in terms of Interface Definition Language (IDL).
   \end{tabularx}
-  \caption{UDDL Multi-level Modeling Approach.}
+  \caption{UDDL Multi-level Modeling Approach.  This table illustrates the hierarchical separation of concerns within the Universal Domain Description Language (UDDL).  It defines a progression from the Conceptual Data Model (CDM), where core domain semantics and relationships are established, to the Logical Data Model (LDM) for quantification (units and reference frames), and finally to the Platform Data Model (PDM) for IDL type association and language bindings.  This paper focuses on the CDM level as it contains the complete semantic description required for formal mapping to OWL and automated verification.}
   \label{tab:uddl_levels}
 \end{table*}
 
@@ -300,7 +300,7 @@ Despite development and growing industry use of UDDL and its predecessor data mo
       \addlinespace[4pt]
       Association & A domain concept that is expressible only through the relation of two or more Participants (Entities and/or Observables).  Associations may also compose a set of Entities and/or Observables and Specialize another Entity or Domain Entity. & \texttt{Ownership}; composes \texttt{Duration} and associates \texttt{Person}, \texttt{Car} Entities through \texttt{owner}, \texttt{asset} Participant roles.
   \end{tabularx}
-  \caption{Core UDDL Conceptual Meta-Model Elements.  CDM, Domain, Basis Entity, and Observable examples are referenced from \cite{sdm_v3_1_15}.} \label{tab:cdm_elements}
+  \caption{Core UDDL Conceptual Meta-Model Elements.  This table defines the fundamental constructs used to build a Conceptual Data Model (CDM).  It distinguishes between Basis Entities (axiomatic domain concepts) and Observables (measurable traits), providing the framework for Entities and Associations.  By formalizing these elements, UDDL allows systems engineers to define the precise meaning of data independent of its implementation.  CDM, Domain, Basis Entity, and Observable examples are referenced from \cite{sdm_v3_1_15}.} \label{tab:cdm_elements}
 \end{table*}
 
 \subsection{UDDL} \label{section:introduction-uddl-overview}
@@ -327,7 +327,7 @@ Associations of Participant Paths require a hypergraph representation of a UDDL 
         \addlinespace[4pt]
         Realization & Refinement relationship binding abstract concepts to more specific definitions across model levels (CDM $\to$ LDM).  Cannot be traversed by Participant Paths (no meaning by doing this). & \texttt{AltitudeMeters} (LDM) realizes \texttt{Altitude} (CDM).
     \end{tabularx}
-    \caption{UDDL Conceptual Relationships.} \label{tab:cdm_relationships}
+    \caption{UDDL Conceptual Relationships.  This table details the structural and semantic links that connect UDDL meta-model elements defined in Table \ref{tab:cdm_elements}.  We distinguish between traversable relationships (Composition and Participant), which define the paths used for data discovery and SPARQL query generation, and non-traversable relationships (Generalization and Realization), which establish class hierarchies and multi-level model refinements.  These relationships provide the formal constraints required attach semantics to data interfaces.} \label{tab:cdm_relationships}
 \end{table*}
 
 Table \ref{tab:cdm_relationships} summarizes how relationships between core UDDL Conceptual Meta-Model Elements are constructed.  Composition relationships include optional multiplicity specifications to indicate the minimum and maximum number of elements that can be composed (-1 indicates unbounded).  If not specified, the default is one.  Similarly, Participants of Associations include optional source and target multiplicities that are applied when calculating the multiplicities along the Participant Paths.  Participant multiplicities are assumed to be unbounded if not specified.
@@ -363,7 +363,7 @@ The SWT stack provides a layered architecture for representing, querying, and re
         \addlinespace[4pt]
         SPARQL & The standard query language for RDF, allowing for the retrieval and manipulation of data stored in RDF format.
     \end{tabularx}
-    \caption{Overview of Semantic Web Technologies.}
+    \caption{Overview of Semantic Web Technologies.  This table summarizes the layered architecture of the Semantic Web stack.  The Resource Description Framework (RDF) is the basis of graph-based data interchange, the Web Ontology Language (OWL) used for formal logical reasoning, and SPARQL for programmatic data retrieval.  Together, these technologies enable the transformation of manual interface reviews into objective, machine-interpretable verification tasks.}
     \label{tab:swt_overview}
 \end{table}
 
@@ -451,7 +451,7 @@ First, we analyze the UDDL query to determine exactly how every piece of data is
     \texttt{AND} (in Joins) & \textbf{Convergence}: Requiring an entity to satisfy multiple relationships simultaneously. & Shared Variable $ ?b $ used in multiple patterns (e.g., $ ?a \to ?b $ AND $ ?c \to ?b $) \\
     \bottomrule
 \end{tabularx}
-\caption{Mapping UDDL Query Components to Semantic Graph Patterns}
+\caption{Mapping UDDL Query Components to Semantic Graph Patterns.  This table outlines the formal translation of UDDL query logic into the graph-based structures of SPARQL.  It bridges the gap between the relational style of UDDL (using tables and joins) and the triple-based model of Semantic Web Technologies (using nodes and edges).  By mapping SQL-like components to specific graph patterns, we enable automatic verification of the semantics of data interfaces, satisfying the precise topological and semantic requirements of the system architecture.}
 \label{table:ast_mapping}
 \end{table*}
 
@@ -519,13 +519,15 @@ We generated an example Interface Control Document (ICD) based on a generic sate
     \end{table*}
 \endgroup
 
-The UDDL data model was transformed into an OWL ontology using the mapping methodology presented in \nameref{sec:uddl2owl_mapping}.  The conversion was implemented in Python by processing the OWL and UDDL data model XML representations.  The generated ontology was then loaded into Prot\'eg\'e with the HermiT reasoner version 1.4.3 configured~\parencite{glimm2014hermit}.  After loading the ontology, the reasoner was started.  The Prot\'eg\'e environment was used to visualize and execute SPARQL queries against the ontology.  The Snap SPARQL plugin was used to allow queries to be run over inferred elements of the ontology~\parencite{horridge2015snap}.  %An ontology alignment was manually generated between the classes in the reference and generated ontologies to enable reasoning across both.
+The UDDL data model was transformed into an OWL ontology using the mapping methodology presented in \nameref{sec:uddl2owl_mapping}.  The generated ontology was then loaded into Prot\'eg\'e with the HermiT reasoner version 1.4.3 configured~\parencite{glimm2014hermit}.  After loading the ontology, the reasoner was started.  The Prot\'eg\'e environment was used to visualize and execute SPARQL queries against the ontology.  The Snap SPARQL plugin was used to allow queries to be run over inferred elements of the ontology~\parencite{horridge2015snap}.  %An ontology alignment was manually generated between the classes in the reference and generated ontologies to enable reasoning across both.
 
 To verify the semantic validity, we created instances for system data observations.  An Observation OWL class was created to allow named individuals representing measurements of Observables in the context implied by the UDDL Query specifications.  We then converted all the UDDL Query specifications into SPARQL queries and executed them against the generated ontology and individuals.  UDDL Queries were then slightly modified to imply different semantics and run against the original set of individuals.
 
 \section{Results} \label{sec:results}
 
 The UDDL data model contains examples of Generalizations, Entities with multiple compositions, Associations with simple and complex participant paths, as well as UDDL Query specifications.  The FACE Shared Data Model (SDM)~\parencite{sdm_v3_1_15} provides examples for Domain, Basis Entity, and Observable model elements.  The set of Queries generated from the example satellite ICDs are shown in Table \ref{tab:example_queries}.  Common UDDL data modeling patterns were used to describe the relationships required to define semantics as presented in the ICD, e.g., the Observation pattern and Assembly pattern.  Table \ref{tab:uddl_summary} shows examples of Associations using these patterns.
+
+The UDDL to OWL conversion was implemented in Python by processing the OWL and UDDL data model XML representations.  The UDDL Query specification to SPARQL Query conversion was also implemented using Python by processing parsed UDDL Query specification abstract syntax trees and building the corresponding SPARQL query constraints.
 
 The generated ontology was loaded into Prot\'eg\'e with the HermiT reasoner configured.  The reasoner verified that there were no logical contradictions.  Table \ref{tab:example_queries} shows an example of the results of the UDDL Query specification conversion to SPARQL queries against the generated ontology.  All SPARQL queries returned the expected sets of individuals indicating that the system contains the expected data observations based on the interfaces specifications.  Any changes to the UDDL Query specifications resulted in SPARQL queries that returned no results indicating the expected semantic inconsistency (i.e., interfaces that require data that is not present in the system).
 
@@ -551,85 +553,6 @@ The generated ontology was loaded into Prot\'eg\'e with the HermiT reasoner conf
     \end{table*}
 \endgroup
 
-% \begin{table*}[t]
-%     \centering
-%     \renewcommand{\arraystretch}{1.5}
-%     \begin{tabular}{|p{0.95\linewidth}|}
-% \hline
-% \textbf{UDDL Query (Solar Panel Monitoring)} \\ 
-% \hline
-% \scriptsize\texttt{SELECT solarPanel\_join.identifier AS solar\_panel\_id, \newline
-% \hspace*{3.5em}solarPanel\_join.healthState AS solar\_panel\_deploy, \newline
-% \hspace*{3.5em}panel\_join.temperature AS solar\_panel\_temp, \newline
-% \hspace*{3.5em}solarPanel\_IncidenceAngle\_Sun\_join.angle AS solar\_panel\_incidence, \newline
-% \hspace*{3.5em}solarPanel\_join.operationalState AS solar\_panel\_ops\_mode \newline
-% FROM Satellite AS satellite\_from \newline
-% JOIN SolarPanel\_PartOf\_Satellite AS solarPanel\_PartOf\_Satellite\_join \newline
-% \hspace*{2.0em}ON solarPanel\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
-% JOIN SolarPanel AS solarPanel\_join \newline
-% \hspace*{2.0em}ON solarPanel\_PartOf\_Satellite\_join.part \newline
-% JOIN TemperatureSensor\_PartOf\_Satellite AS temperatureSensor\_PartOf\_Satellite\_join \newline
-% \hspace*{2.0em}ON temperatureSensor\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
-% JOIN TemperatureSensor AS temperatureSensor\_join \newline
-% \hspace*{2.0em}ON temperatureSensor\_PartOf\_Satellite\_join.part \newline
-% JOIN TemperatureSensor\_Observe\_SolarPanel AS temperatureSensor\_Observe\_SolarPanel\_join \newline
-% \hspace*{2.0em}ON temperatureSensor\_Observe\_SolarPanel\_join.observer = temperatureSensor\_join \newline
-% JOIN SolarPanel AS solarPanel\_joinI \newline
-% \hspace*{2.0em}ON temperatureSensor\_Observe\_SolarPanel\_join.observed \newline
-% JOIN Panel\_PartOf\_SolarPanel AS panel\_PartOf\_SolarPanel\_join \newline
-% \hspace*{2.0em}ON panel\_PartOf\_SolarPanel\_join.assembly = solarPanel\_joinI \newline
-% JOIN Panel AS panel\_join \newline
-% \hspace*{2.0em}ON panel\_PartOf\_SolarPanel\_join.part \newline
-% JOIN SunSenor\_PartOf\_Satellite AS sunSenor\_PartOf\_Satellite\_join \newline
-% \hspace*{2.0em}ON sunSenor\_PartOf\_Satellite\_join.assembly = satellite\_from \newline
-% JOIN SunSensor AS sunSensor\_join \newline
-% \hspace*{2.0em}ON sunSenor\_PartOf\_Satellite\_join.part \newline
-% JOIN SunSensor\_Observe\_IncidenceAngle AS sunSensor\_Observe\_IncidenceAngle\_join \newline
-% \hspace*{2.0em}ON sunSensor\_Observe\_IncidenceAngle\_join.observer = sunSensor\_join \newline
-% JOIN SolarPanel\_IncidenceAngle\_Sun AS solarPanel\_IncidenceAngle\_Sun\_join \newline
-% \hspace*{2.0em}ON sunSensor\_Observe\_IncidenceAngle\_join.observed} \\ 
-% \hline
-% \textbf{SPARQL Translation} \\ 
-% \hline
-% \scriptsize\texttt{SELECT ?obs\_0\_identifier ?obs\_1\_healthState ?obs\_2\_temperature ?obs\_3\_angle ?obs\_4\_operationalState \newline
-% WHERE \{ \newline
-% \hspace*{1.0em}?obs\_0\_identifier a :Observation . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasObservable :Identifier . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_0\_identifier :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
-% \hspace*{1.0em}?obs\_1\_healthState a :Observation . \newline
-% \hspace*{1.0em}?obs\_1\_healthState :hasObservable :HealthState . \newline
-% \hspace*{1.0em}?obs\_1\_healthState :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_1\_healthState :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_1\_healthState :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
-% \hspace*{1.0em}?obs\_2\_temperature a :Observation . \newline
-% \hspace*{1.0em}?obs\_2\_temperature :hasObservable :Temperature . \newline
-% \hspace*{1.0em}?obs\_2\_temperature :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_2\_temperature :hasSatelliteParticipant\_assembly :TemperatureSensor\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_2\_temperature :hasTemperatureSensor\_PartOf\_SatelliteComposition\_part :TemperatureSensor . \newline
-% \hspace*{1.0em}?obs\_2\_temperature :hasTemperatureSensorParticipant\_observer :TemperatureSensor\_Observe\_SolarPanel . \newline
-% \hspace*{1.0em}?obs\_2\_temperature :hasTemperatureSensor\_Observe\_SolarPanelComposition\_observed :part . \newline
-% \hspace*{1.0em}?obs\_2\_temperature :haspartParticipant\_assembly :Panel\_PartOf\_SolarPanel . \newline
-% \hspace*{1.0em}?obs\_2\_temperature :hasPanel\_PartOf\_SolarPanelComposition\_part :Panel . \newline
-% \hspace*{1.0em}?obs\_3\_angle a :Observation . \newline
-% \hspace*{1.0em}?obs\_3\_angle :hasObservable :Angle . \newline
-% \hspace*{1.0em}?obs\_3\_angle :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_3\_angle :hasSatelliteParticipant\_assembly :SunSenor\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_3\_angle :hasSunSenor\_PartOf\_SatelliteComposition\_part :SunSensor . \newline
-% \hspace*{1.0em}?obs\_3\_angle :hasSunSensorParticipant\_observer :SunSensor\_Observe\_IncidenceAngle . \newline
-% \hspace*{1.0em}?obs\_3\_angle :hasSunSensor\_Observe\_IncidenceAngleComposition\_observed :SolarPanel\_IncidenceAngle\_Sun . \newline
-% \hspace*{1.0em}?obs\_4\_operationalState a :Observation . \newline
-% \hspace*{1.0em}?obs\_4\_operationalState :hasObservable :OperationalState . \newline
-% \hspace*{1.0em}?obs\_4\_operationalState :hasSatellite :Satellite . \newline
-% \hspace*{1.0em}?obs\_4\_operationalState :hasSatelliteParticipant\_assembly :SolarPanel\_PartOf\_Satellite . \newline
-% \hspace*{1.0em}?obs\_4\_operationalState :hasSolarPanel\_PartOf\_SatelliteComposition\_part :SolarPanel . \newline
-% \}} \\
-% \hline
-% \end{tabular}
-%     \caption{Example UDDL Queries and Generated SPARQL.}
-%     \label{tab:query_examples}
-% \end{table*}
 
 \section{Analysis and Discussion} \label{sec:analysis}
 
