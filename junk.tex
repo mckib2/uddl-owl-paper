@@ -1,0 +1,74 @@
+\begin{table*}[t]
+    \centering
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabularx}{\textwidth}{@{}A{0.15\textwidth}A{0.55\textwidth}>{\raggedright\arraybackslash}X@{}}
+        \rowcolor{tableheader}
+        \headingfont\bfseries Relation & \headingfont\bfseries Construction & \headingfont\bfseries Example \\
+        \addlinespace[4pt]
+        Composition & Aggregation of conceptual elements (Entities/Observables) into a parent Entity.  Includes multiplicity specifications (upper and lower bounds).  Can be traversed by Participant Paths in the direction of the composition, i.e., from parent to child. & \texttt{Car} composes at most $ 4 $ \texttt{Wheels}. \\
+        \addlinespace[4pt]
+        Participant & Role-based link in an Association pointing to an Entity/Observable via a path.  Includes source/target multiplicities (upper and lower bounds).  Can be traversed bidirectionally by Participant Paths. & In the Association \texttt{Teaching}, the participant Entity \texttt{Person} has a single role of \texttt{instructor} and a second participant \texttt{Person} has role of \texttt{student}, potentially many. \\
+        \addlinespace[4pt]
+        Generalization & ``is-a'' relationship where a specialized Entity declares it is a specialization of another Entity.  Cannot be traversed by Participant Paths. & \texttt{FixedWingAircraft} specializes \texttt{Aircraft}. \\
+        \addlinespace[4pt]
+        Realization & Refinement relationship binding abstract concepts to more specific definitions across model levels (CDM $\to$ LDM).  Cannot be traversed by Participant Paths (no meaning by doing this). & \texttt{AltitudeMeters} (LDM) realizes \texttt{Altitude} (CDM).
+    \end{tabularx}
+    \caption{UDDL Conceptual Relationships.  This table details the structural and semantic links that connect UDDL meta-model elements defined in Table \ref{tab:cdm_elements}.  We distinguish between traversable relationships (Composition and Participant), which define the paths used for data discovery and SPARQL query generation, and non-traversable relationships (Generalization and Realization), which establish class hierarchies and multi-level model refinements.  These relationships provide the formal constraints required attach semantics to data interfaces.} \label{tab:cdm_relationships}
+\end{table*}
+
+
+
+\begin{figure*}[t]
+  \centering
+  \colfig{figures/ontology-diagram.png}
+  \caption{Reference Satellite Ontology}
+  \label{fig:satellite_ontology}
+\end{figure*}
+
+We generated example Interface Control Documents (ICDs) based on a generic satellite design, provided in the \nameref{sec:Appendix}.  Based on these ICDs, we then created a reference satellite OWL ontology in Prot\'eg\'e and a UDDL data model using the PHENOM\textregistered{} modeling environment, and exported to XMI~\parencite{musen2015protege, phenom}.  The reference satellite ontology captured the structure of the satellite system components and their relationships from a system viewpoint.  The UDDL data model captured the interface semantics using the UDDL Query Language backed by a conceptual Entity and Association data model.  A diagram of the reference ontology is shown in Figure \ref{fig:satellite_ontology} and Table \ref{tab:uddl_summary} presents a summary of the data model constructed based on the ICD content.  The UDDL data model contains examples of Generalizations, Entities with multiple compositions, Associations with simple and complex participant paths, as well as UDDL Query specifications.  The FACE Shared Data Model (SDM)~\parencite{sdm_v3_1_15} provides examples for Domain, Basis Entity, and Observable model elements.  The set of Queries generated from the example satellite ICDs are shown in Table \ref{tab:query_examples}.
+
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/entity-association.png}
+    \caption{Example of some features of UDDL Entity construction.  Gray boxes are composed Entities and Observables, e.g., \texttt{EntityX} composes \texttt{ObservableA} and \texttt{ObservableB}.  Solid, dotted, and dashed lines represent Participant Paths.  The Participant Path associated with \texttt{participant3} traverses two nodes, through the composed \texttt{EntityZ} of \texttt{EntityY} and terminating on the \texttt{ObservableD} of \texttt{EntityZ}. No multiplicities are specified for compositions and participant paths and should therefore default multiplicities should be assumed. }
+    \label{fig:entity-association}
+\end{figure*}
+
+Figure \ref{fig:entity-association} provides a summary of some of the features of Entity and Association construction.  Entities \texttt{EntityX}, \texttt{EntityY}, and \texttt{EntityZ} compose Observables and other Entities (grey boxes).  The single \texttt{Association} associates Entities and Observables through three different Participant Paths represented by solid, dotted, and dashed lines.  \texttt{participant1} simply associates the entire \texttt{EntityX}.  \texttt{participant2} specifically associates the \texttt{ObservableC} of \texttt{EntityY}.  \texttt{participant3} associates the \texttt{ObservableD} of \texttt{EntityZ} through the composed \texttt{EntityZ} within \texttt{EntityY}, demonstrating a non-trivial multi-node Participant Path.
+
+
+\subsubsection{Step 1: Path Resolution}
+
+First, we analyze the UDDL query to determine exactly how every piece of data is connected to the root entity.  We construct an \textit{Alias Map} ($ \mathcal{M} $), which traces the full navigational path from the \texttt{FROM} entity to every \texttt{JOIN} alias.  Unlike a standard database query plan which executes joins in steps, this map calculates the absolute path for every participant in the query.
+
+\begin{table*}[t]
+\centering
+\renewcommand{\arraystretch}{1.5}
+\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X@{}}
+    \rowcolor{tableheader}
+    \textbf{\headingfont UDDL Component} & \textbf{\headingfont Logic} & \textbf{\headingfont SPARQL Graph Representation} \\
+    \addlinespace[4pt]
+    \texttt{FROM Entity AS a} & \textbf{Root}: The starting point of the graph traversal. & Root Variable $ ?a $ \\
+    \addlinespace[4pt]
+    \texttt{JOIN Target AS b ON a.role} & \textbf{Edge}: A traversal from one entity to another via a relationship. & Triple Pattern $ (?a \text{ :role } ?b) $ \\
+    \addlinespace[4pt]
+    \texttt{SELECT b.attr} & \textbf{Projection}: Identifying the specific data value to retrieve. & Select Variable $ ?b\_attr $ from $ (?b \text{ :attr } ?b\_attr) $ \\
+    \addlinespace[4pt]
+    \texttt{AND} (in Joins) & \textbf{Convergence}: Requiring an entity to satisfy multiple relationships simultaneously. & Shared Variable $ ?b $ used in multiple patterns (e.g., $ ?a \to ?b $ AND $ ?c \to ?b $) \\
+    \bottomrule
+\end{tabularx}
+\caption{Mapping UDDL Query Components to Semantic Graph Patterns.  This table outlines the formal translation of UDDL query logic into the graph-based structures of SPARQL.  It bridges the gap between the relational style of UDDL (using tables and joins) and the triple-based model of Semantic Web Technologies (using nodes and edges).  By mapping SQL-like components to specific graph patterns, we enable automatic verification of the semantics of data interfaces, satisfying the precise topological and semantic requirements of the system architecture.}
+\label{table:ast_mapping}
+\end{table*}
+
+Crucially, this step resolves complex constraints like ``Diamond Joins'' or \texttt{AND} conditions.  If a UDDL query specifies that an entity $ D $ must be joined to both $ B $ and $ C $ (e.g., \texttt{JOIN D ON D.ref1 = B AND D.ref2 = C}), the Alias Map records two distinct paths reaching the same alias $ D $.  This captures the requirement that $ D $ must be the intersection (or convergence) of these two paths.
+
+\subsubsection{Step 2: Graph Pattern Generation}
+
+In the second phase, the resolved paths are converted into a SPARQL query pattern.  Each unique alias in the UDDL query becomes a variable in the SPARQL query (e.g., alias \texttt{sensor} becomes variable \texttt{?sensor}).  Each step in the path becomes a logic statement (a ``triple pattern'') that the data must satisfy.
+
+The logical ``AND'' is enforced implicitly by the structure of the graph pattern.  By using the same variable name for the destination of multiple paths, we constrain the query engine to find only those data instances that satisfy all incoming relationships.  For example, if the map contains paths $ A \to B \to D $ and $ A \to C \to D $, the generated SPARQL will require the variable $ ?d $ to be connected to both $ ?b $ and $ ?c $.  If no such data exists in the system that satisfies this topology, the query returns no results, correctly indicating a semantic mismatch or missing data.
+
+Table \ref{table:ast_mapping} summarizes how the primary components of a UDDL query (Selection, Roots, Joins, and Logic) map to the graph-based concepts of SPARQL.
+

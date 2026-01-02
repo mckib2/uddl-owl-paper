@@ -249,24 +249,6 @@ In systems engineering, rigorous definition of data and interfaces is not merely
 
 Systems engineering practice has shifted in the past decade to emphasize open systems approaches and adoption of Intelligent Digital Twin-enabled systems, where machine-interpretable data is a prerequisite for modern sociotechnical system integration~\parencite{INCOSE2035}.  Strategic initiatives such as the Modular Open Systems Approach (MOSA) directives~\parencite{esper2019modular, zimmerman2019considerations, guertin2025sustained} also drive the need for semantic alignment, particularly for developing complex cyber-physical systems.  To support this, recent Department of Defense (DoD) directives emphasize the formalization of interface documentation through standards like Open Mission Systems (OMS)~\parencite{USAF_OMS}, the Future Airborne Capability Environment (FACE)\textregistered{}~\parencite{OpenGroup2017FACE}, and Sensor Open Systems Architecture (SOSA)\textregistered{}~\parencite{lane2024pyramid}.  However, current MOSA-aligned workflows rely on domain experts to manually judge the validity of semantic specifications.  This manual process is a significant bottleneck in large-scale system integration.  By bridging UDDL with Semantic Web Technologies, we transform interface review from a subjective manual exercise into more objective, machine-interpretable and automatable tasks.
 
-\begin{table*}[t]
-  \centering
-  \renewcommand{\arraystretch}{1.5}
-  \begin{tabularx}{\textwidth}{@{}A{0.25\textwidth}A{0.35\textwidth}>{\raggedright\arraybackslash}X@{}}
-      \rowcolor{tableheader}
-      \headingfont\bfseries Model Level & \headingfont\bfseries Description & \headingfont\bfseries Semantic Focus \\
-      \addlinespace[4pt]
-      Conceptual Data Model (CDM) & Defines the complete semantics of all Entities and Associations. & Concepts and relationships.  Entities and Associations are typed with Observables (traits which can be observed but not further characterized). \\
-      \addlinespace[4pt]
-      Logical Data Model (LDM) & Refines Entities/Associations with Measurements. & Quantification.  Further characterizes Observables by adding frames of reference, units, and value types (e.g., Integer, Real). \\
-      \addlinespace[4pt]
-      Platform Data Model (PDM) & Refines elements with Platform Data Types. & Implementation.  Additional characterization of logical measurements to include bit-level precision and language bindings in terms of Interface Definition Language (IDL).
-  \end{tabularx}
-  \caption{UDDL Multi-level Modeling Approach.  This table illustrates the hierarchical separation of concerns within the Universal Domain Description Language (UDDL).  It defines a progression from the Conceptual Data Model (CDM), where core domain semantics and relationships are established, to the Logical Data Model (LDM) for quantification (units and reference frames), and finally to the Platform Data Model (PDM) for IDL type association and language bindings.  This paper focuses on the CDM level as it contains the complete semantic description required for formal mapping to OWL and automated verification.}
-  \label{tab:uddl_levels}
-\end{table*}
-
-
 The failure of traditional, document-based approaches to capture data semantics stems from their inability to formally and precisely bind meaning to structure, i.e., to attach semantics to syntax~\parencite{price2013semantic, Friedenthal2014}.  Ambiguity often arises from the heterogeneous nature of documentation across disparate systems, ranging from avionics to the Industrial Internet of Things (IIoT)~\parencite{mzili2025interoperability, noura2019interoperability}.  For example, a variable labeled \texttt{alt} in a ICD may imply ``altitude'', but it may fail to specify a reference frame (e.g., ellipsoidal vs.\ geoidal), the unit of measure (e.g., meters vs.\ feet), or the domain (e.g., air operations vs.\ ground).  While the integration of data semantics is well-studied in the context of Knowledge Graphs (KGs) and ontologies, UDDL data models remain under-studied in systems and interoperability literature.  Nevertheless, UDDL was developed expressly to fill the documentation gap described above, its objective being to ``formally document the meaning of data with the goal of eliminating ambiguity''~\parencite{OpenGroup2023UDDL}.  It achieves this by providing the means to create conceptual building blocks that are then used to construct formal definitions of the meaning of data flowing through interfaces.
 
 While UDDL is effective at defining the contextual meaning of interface data, it does not provide a way to determine whether the semantics expressed by an interface are \textit{meaningful} within a given domain.  In other words, UDDL allows an interface to specify that a data field represents a measurement produced by a specific component, but it does not assess whether that semantic specification makes sense in the context of a particular system architecture and operational context.  For example, an interface could define a data field as representing a measurement of spacecraft mass produced by a temperature sensor.  Although this statement is syntactically valid and expressible using UDDL, it is semantically nonsensical in the context of spacecraft systems engineering, as temperature sensors do not usually produce mass measurements.  UDDL alone cannot detect such domain-level semantic mismatches in interface definitions, instead relying on domain experts to review the interface definitions and make judgments about the validity of the semantic specifications.
@@ -277,70 +259,42 @@ Semantic Web Technologies (SWTs), designed to enable machine-readability and log
 
 Despite development and growing industry use of UDDL and its predecessor data modeling languages since 2013~\parencite{OpenGroup2013FACE}, to our knowledge, there is no existing literature showing interoperability, traceability, or mappings between UDDL data models and OWL or RDF.  The objective of this work is to develop an approach that enables UDDL domain-specific data models to interoperate with SWTs, leading to more efficient integration between systems based on UDDL and SWTs. 
 
-% In \nameref{sec:background}, the relevant technologies are described and relevant literature on the subject is reviewed.  The methodology used to approach this problem is described in \nameref{sec:methods}.  The results of this work are presented in \nameref{sec:results} and are analyzed in \nameref{sec:analysis}.  Limitations of this research and potential avenues for future research are discussed in \nameref{sec:discussion} and the paper is concluded in \nameref{sec:conclusion}.
-
 \section{Background} \label{sec:background}
 
 \begin{table*}[t]
   \centering
-  \renewcommand{\arraystretch}{1.5}
-  \begin{tabularx}{\textwidth}{@{}A{0.20\textwidth}A{0.40\textwidth}>{\raggedright\arraybackslash}X@{}}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabularx}{\textwidth}{@{}l p{5.5cm} X@{}}
       \rowcolor{tableheader}
-      \headingfont\bfseries Element Name & \headingfont\bfseries Construction & \headingfont\bfseries Example \\
+      \headingfont\bfseries UDDL Construct & \headingfont\bfseries Definition \& Role in Mapping & \headingfont\bfseries Example \\
+      \midrule
+      \textbf{Basis Entity} & Axiomatic domain concept. & \texttt{Place} (Axiomatic concept) \\
       \addlinespace[4pt]
-      Conceptual Data Model & Packages conceptual model elements in a single collection. & \texttt{Observables} (a collection of all Observable data model elements). \\
+      \textbf{Observable} & Unique measurable trait. & \texttt{Position} (Measurable trait) \\
       \addlinespace[4pt]
-      Domain & A collection of Basis Entities. & \texttt{Sensing}; includes the \texttt{Object} Basis Entity. \\
+      \textbf{Entity} & Concept characterized by composed Observables and other Entities. & \texttt{Person} (Composes \texttt{Identifier}) \\
       \addlinespace[4pt]
-      Basis Entity & Unique axiomatic domain concept. & \texttt{Place} \\
+      \textbf{Association} & Relation of two or more Participants. & \texttt{Ownership} (Relates \texttt{Person} and \texttt{Car}) \\
       \addlinespace[4pt]
-      Observable & Unique trait which can be observed but not further characterized. & \texttt{Position} \\
+      \textbf{Composition} & Traversable parent-child link. & \texttt{Car} $\xrightarrow{composes}$ \texttt{Wheels} \\
       \addlinespace[4pt]
-      Entity & A domain concept characterized by a set of composed Observables and/or other Entities.  Can Specialize another Entity or Domain Entity. & \texttt{Person}; composes \texttt{Identifier} and \texttt{Position} Observables. \\
+      \textbf{Participant} & Role-based link in an Association. & \texttt{Teaching} $\xrightarrow{role}$ \texttt{Instructor} \\
       \addlinespace[4pt]
-      Association & A domain concept that is expressible only through the relation of two or more Participants (Entities and/or Observables).  Associations may also compose a set of Entities and/or Observables and Specialize another Entity or Domain Entity. & \texttt{Ownership}; composes \texttt{Duration} and associates \texttt{Person}, \texttt{Car} Entities through \texttt{owner}, \texttt{asset} Participant roles.
+      \textbf{Generalization} & "is-a" hierarchy. & \texttt{FixedWingAircraft} specializes \texttt{Aircraft} \\
+      \bottomrule
   \end{tabularx}
-  \caption{Core UDDL Conceptual Meta-Model Elements.  This table defines the fundamental constructs used to build a Conceptual Data Model (CDM).  It distinguishes between Basis Entities (axiomatic domain concepts) and Observables (measurable traits), providing the framework for Entities and Associations.  By formalizing these elements, UDDL allows systems engineers to define the precise meaning of data independent of its implementation.  CDM, Domain, Basis Entity, and Observable examples are referenced from \cite{sdm_v3_1_15}.} \label{tab:cdm_elements}
+  \caption{Core UDDL Conceptual Meta-Model Elements and Relationships.  This table defines the fundamental constructs used to build a Conceptual Data Model (CDM).  It distinguishes between Basis Entities (axiomatic domain concepts) and Observables (measurable traits), providing the framework for Entities and Associations.  By formalizing these elements, UDDL allows systems engineers to define the precise meaning of data independent of its implementation.  CDM, Domain, Basis Entity, and Observable examples are referenced from \cite{sdm_v3_1_15}.  We also distinguish between traversable relationships (Composition and Participant), which define the paths used for data discovery and SPARQL query generation, and non-traversable relationships (Generalization and Realization), which establish class hierarchies and multi-level model refinements.  These relationships provide the formal constraints required attach semantics to data interfaces.} \label{tab:cdm_elements}
 \end{table*}
 
 \subsection{UDDL} \label{section:introduction-uddl-overview}
-Any system developed against the FACE and SOSA technical standards necessarily use UDDL data models for interface specification.  UDDL utilizes a multi-level modeling approach summarized in Table \ref{tab:uddl_levels}~\parencite{OpenGroup2023UDDL}.
-
-This paper will focus primarily on the Conceptual Data Model (CDM), as the meaning (i.e., the semantics) of the data are completely described by conceptual elements and their relationships.  We will draw upon lower-level Logical and Platform Data Model concepts to justify design decisions to ensure the mappings are compatible with lower-level refinements.  Therefore, we will review only the conceptual meta-model elements and their relationships.
+Any system developed against the FACE and SOSA technical standards necessarily use UDDL data models for interface specification.  This paper will focus primarily on the Conceptual Data Model (CDM), as the meaning (i.e., the semantics) of the data are completely described by conceptual elements and their relationships.  We will draw upon lower-level Logical and Platform Data Model concepts to justify design decisions to ensure the mappings are compatible with lower-level refinements.  Therefore, we will review only the conceptual meta-model elements and their relationships.
 
 Table \ref{tab:cdm_elements} informally summarizes the construction of relevant conceptual meta-model elements.  All elements are assumed to have a globally unique name as well as an optional textual description field, enfoced via Object Constraint Language (OCL) constraints.  A Conceptual Data Model (CDM) is a top-level package that collects and organizes all conceptual model elements.  CDMs can be nested to create hierarchies or other organizational structures and multiple CDMs may be included in a single root-level Data Model.  A Domain collects a set of Basis Entities, relating to well understood concepts by practitioners within a particular domain~\parencite{OpenGroup2023UDDL}.  Basis Entities represent unique concepts that are not expressible simply through model structure, e.g., the concepts of ``Minimum'' and ``Maximum''~\parencite{sdm_v3_1_15}.  Observables are characteristics that can be observed or measured, e.g., Position, Orientation, Identifier.  Notice the examples for Basis Entity and Observable in table \ref{tab:cdm_elements} -- a ``Position'' is something that can be measured and is therefore an Observable while ``Place'' is a concept and not meaningfully measurable and is therefore a Basis Entity (i.e., you can not measure ``Place'' directly, but you could measure the Position of a Place, or the Extent of a Place, Position and Extent being Observables).  Entities represent a domain concept in terms of their Observables and other composed conceptual Entities.  Associations are themselves Entities but which also include two or more Participants that can associate model paths terminating in either an Entity or Observable.  The Participants in the Association are characterized through Participant Paths which are a sequence of nodes that specify an arbitrary path through the network of related Entities and Associations and follow traversal rules, namely that Compositions can be traversed in the direction of the composition and Participants of Associations can be traversed bidirectionally.
 
 Associations of Participant Paths require a hypergraph representation of a UDDL data model, i.e., relationships are expressed not just between nodes of the graph, but between higher-level graph structures as well.
 
-\begin{table*}[t]
-    \centering
-    \renewcommand{\arraystretch}{1.5}
-    \begin{tabularx}{\textwidth}{@{}A{0.15\textwidth}A{0.55\textwidth}>{\raggedright\arraybackslash}X@{}}
-        \rowcolor{tableheader}
-        \headingfont\bfseries Relation & \headingfont\bfseries Construction & \headingfont\bfseries Example \\
-        \addlinespace[4pt]
-        Composition & Aggregation of conceptual elements (Entities/Observables) into a parent Entity.  Includes multiplicity specifications (upper and lower bounds).  Can be traversed by Participant Paths in the direction of the composition, i.e., from parent to child. & \texttt{Car} composes at most $ 4 $ \texttt{Wheels}. \\
-        \addlinespace[4pt]
-        Participant & Role-based link in an Association pointing to an Entity/Observable via a path.  Includes source/target multiplicities (upper and lower bounds).  Can be traversed bidirectionally by Participant Paths. & In the Association \texttt{Teaching}, the participant Entity \texttt{Person} has a single role of \texttt{instructor} and a second participant \texttt{Person} has role of \texttt{student}, potentially many. \\
-        \addlinespace[4pt]
-        Generalization & ``is-a'' relationship where a specialized Entity declares it is a specialization of another Entity.  Cannot be traversed by Participant Paths. & \texttt{FixedWingAircraft} specializes \texttt{Aircraft}. \\
-        \addlinespace[4pt]
-        Realization & Refinement relationship binding abstract concepts to more specific definitions across model levels (CDM $\to$ LDM).  Cannot be traversed by Participant Paths (no meaning by doing this). & \texttt{AltitudeMeters} (LDM) realizes \texttt{Altitude} (CDM).
-    \end{tabularx}
-    \caption{UDDL Conceptual Relationships.  This table details the structural and semantic links that connect UDDL meta-model elements defined in Table \ref{tab:cdm_elements}.  We distinguish between traversable relationships (Composition and Participant), which define the paths used for data discovery and SPARQL query generation, and non-traversable relationships (Generalization and Realization), which establish class hierarchies and multi-level model refinements.  These relationships provide the formal constraints required attach semantics to data interfaces.} \label{tab:cdm_relationships}
-\end{table*}
+Table \ref{tab:cdm_elements} additionally summarizes how relationships between core UDDL Conceptual Meta-Model Elements are constructed.  Composition relationships include optional multiplicity specifications to indicate the minimum and maximum number of elements that can be composed (-1 indicates unbounded).  If not specified, the default is one.  Similarly, Participants of Associations include optional source and target multiplicities that are applied when calculating the multiplicities along the Participant Paths.  Participant multiplicities are assumed to be unbounded if not specified.
 
-Table \ref{tab:cdm_relationships} summarizes how relationships between core UDDL Conceptual Meta-Model Elements are constructed.  Composition relationships include optional multiplicity specifications to indicate the minimum and maximum number of elements that can be composed (-1 indicates unbounded).  If not specified, the default is one.  Similarly, Participants of Associations include optional source and target multiplicities that are applied when calculating the multiplicities along the Participant Paths.  Participant multiplicities are assumed to be unbounded if not specified.
-
-
-\begin{figure*}
-    \centering
-    \includegraphics[width=0.8\textwidth]{figures/entity-association.png}
-    \caption{Example of some features of UDDL Entity construction.  Gray boxes are composed Entities and Observables, e.g., \texttt{EntityX} composes \texttt{ObservableA} and \texttt{ObservableB}.  Solid, dotted, and dashed lines represent Participant Paths.  The Participant Path associated with \texttt{participant3} traverses two nodes, through the composed \texttt{EntityZ} of \texttt{EntityY} and terminating on the \texttt{ObservableD} of \texttt{EntityZ}. No multiplicities are specified for compositions and participant paths and should therefore default multiplicities should be assumed. }
-    \label{fig:entity-association}
-\end{figure*}
-
-Figure \ref{fig:entity-association} provides a summary of some of the features of Entity and Association construction.  Entities \texttt{EntityX}, \texttt{EntityY}, and \texttt{EntityZ} compose Observables and other Entities (grey boxes).  The single \texttt{Association} associates Entities and Observables through three different Participant Paths represented by solid, dotted, and dashed lines.  \texttt{participant1} simply associates the entire \texttt{EntityX}.  \texttt{participant2} specifically associates the \texttt{ObservableC} of \texttt{EntityY}.  \texttt{participant3} associates the \texttt{ObservableD} of \texttt{EntityZ} through the composed \texttt{EntityZ} within \texttt{EntityY}, demonstrating a non-trivial multi-node Participant Path.
 
 \subsection{UDDL Query Construction} \label{section:query_construction}
 
@@ -375,29 +329,15 @@ SPARQL (SPARQL Protocol and RDF Query Language) complements RDF and OWL by provi
 
 \subsection{Closed-World and Open-World Assumptions} \label{section:theory-cwa-owa}
 
-UDDL is used to construct domain-specific data models (DSDMs), functioning as a descriptive language to talk about all the data flowing through system interfaces.  Any concept not able to be captured using this data model definitionally cannot be understood by any interfaced component in the system if the interfaces are fully characterized using a common data model. SWTs generally adopt an open-world assumption (OWA), in which the absence of information does not imply falsity. Under OWA, a knowledge base is assumed to be inherently incomplete, and additional information may always exist elsewhere. For example, if a knowledge base contains information about a \texttt{Person} but does not state whether that person has any siblings, a reasoning engine cannot conclude that the person has no siblings. It can only conclude that the presence or absence of siblings is unknown, and further facts may be asserted later without contradiction.
+UDDL is used to construct domain-specific data models (DSDMs), functioning as a descriptive language to talk about all the data flowing through system interfaces.  Any concept not able to be captured using this data model definitionally cannot be understood by any interfaced component in the system if the interfaces are fully characterized using a common data model.  This is equivalent to a closed-world assumption (CWA).  SWTs generally adopt an open-world assumption (OWA), in which the absence of information does not imply falsity. Under OWA, a knowledge base is assumed to be inherently incomplete, and additional information may always exist elsewhere.
 
-In contrast, a closed-world assumption (CWA) treats a knowledge base as complete with respect to the facts it represents: information that is not explicitly stated is assumed to be false. Using the same example, if a closed-world system represents a \texttt{Person} and does not list any brothers, the system concludes that the person has no brothers. Any siblings not represented are assumed not to exist within the modeled world. Closed-world reasoning is common in databases and many engineering modeling environments, where completeness and determinism are required for decision-making.
-
-The distinction between OWA and CWA has important implications for how knowledge is represented and interpreted. Open-world reasoning supports distributed and incremental knowledge integration, while closed-world reasoning enables definitive conclusions based on explicitly stated information. Understanding this distinction is essential when applying Semantic Web Technologies or integrating them with systems that rely on closed-world assumptions.
-
-Because UDDL relies on a closed-world view of completeness while Semantic Web Technologies adopt an open-world assumption, representing UDDL concepts using SWTs requires the introduction of ``closure axioms''. These axioms explicitly restrict which properties or relationships are considered complete for a given entity, thereby simulating the structural rigor and completeness guarantees of closed-world representations within an open-world reasoning framework.
-
-\subsection{Hypergraph Representations in Semantic Web}
-The Semantic Web standards, primarily RDF and OWL, are based on directed binary graphs where knowledge is expressed as triples connecting a subject to an object via a predicate~\parencite{W3C_RDF11}.  While this simplicity facilitates scalability and graph traversal, it complicates the modeling of complex, high-dimensional systems~\parencite{antelmi2023survey}.  Many systems engineering domains are naturally described by hypergraphs, where a single relation (hyperedge) connects an arbitrary set of nodes.  UDDL requires treating participant paths of associations as first-class citizens when modeling, enabling the definition of semantic relationships between \textit{paths} rather than merely between Entities and Observables~\parencite{OpenGroup2023UDDL}, requiring a hypergraph representation.
-
-\subsubsection{Patterns for Hypergraph Representation}
-Since OWL does not natively support $ N $-ary hyperedges, various design patterns have emerged to map hypergraphs into binary relations.  The $ N $-ary Relation Pattern (or Reification) is the most established method for transforming a hyperedge into a distinct individual of a specific class ~\parencite{noy2006defining}.  For example, a `Flight` relationship connecting a `Pilot`, `Aircraft`, and `Route` is modeled as an instance of a `Flight` class with binary properties pointing to each participant.  While this captures the structural semantics of a hyperedge, it inflates the graph size and obscures direct traversal, complicating path-based queries and reasoning~\parencite{hernandez2015reifying}.
-
-Approaches such as Singleton Properties ~\parencite{nguyen2014singleton} and Named Graphs ~\parencite{carroll2005named} allow for attaching metadata to specific relationship instances or identifying sets of triples with a URI.  However, these approaches often lead to high schema volatility and rely on implementation-specific semantics that exist outside the standard logical model of OWL, limiting their utility for automated reasoning about internal path structures and compatibility with standard tooling~\parencite{schneider2014rdf}.
-
-RDF-star is a recent approach that allows triples to be the subject or object of other triples, providing a compact syntax for statements about statements~\parencite{hartig2014foundations}.  While efficient for annotating single hops, it does not natively provide a construct for ordered sequences of arbitrary length, which is a core requirement for UDDL Participant Paths.
-
-To model relationships \textit{between} paths (e.g., ``Path A is associated with Path B''), the path must be reified as a structural entity.  UDDL proposes a Linked List Pattern, a formalized metamodel for defining paths as structural chains.  An \texttt{Association} is composed of \texttt{Participant} elements defined by a \texttt{path} attribute, itself a recursive composition of \texttt{PathNode} elements~\parencite{OpenGroup2023UDDL}.  There are domain-specific ontology extensions that provide similar structures to UDDL's linked list pattern.  The path association requirement mirrors patterns in geospatial ontologies where ``Semantic Trajectories'' aggregate sequences of segments to model inter-path interactions~\parencite{hu2013semantic}, and bioinformatics, where the BioPAX ontology models signaling pathways as hierarchical hypergraphs to define ``crosstalk'' between distinct paths~\parencite{demir2010biopax, fabregat2018reactome}.  However, these domain-specific extensions are not portable across standard tooling and assume domain-specifics rather than allowing a modeler to model arbitrary domains and elements of those domains.
-
-The mapping methodology presented in \nameref{sec:uddl2owl_mapping} builds upon these patterns, specifically utilizing a combination of the $ N $-ary Relation pattern (Reification) for Associations and OWL's Property Chain Axiom to promote UDDL's path-centric logic into the OWL 2 DL framework.
+The distinction between OWA and CWA has important implications for how knowledge is represented and interpreted.  Open-world reasoning supports distributed and incremental knowledge integration, while closed-world reasoning enables definitive conclusions based on explicitly stated information.  As UDDL relies on a the CWA while Semantic Web Technologies adopt an open-world assumption, representing UDDL concepts using SWTs requires the introduction of ``closure axioms'' in the form of disjoint axioms and objec properties with restrictions.  These axioms explicitly restrict which properties or relationships are considered complete for a given entity, thereby simulating the structural rigor and completeness guarantees of closed-world representations within an open-world reasoning framework.
 
 \section{UDDL to OWL Mapping} \label{sec:uddl2owl_mapping}
+
+The Semantic Web standards, primarily RDF and OWL, are based on directed binary graphs where knowledge is expressed as triples connecting a subject to an object via a predicate~\parencite{W3C_RDF11}.  While this simplicity facilitates scalability and graph traversal, it complicates the modeling of complex, high-dimensional systems~\parencite{antelmi2023survey}.  Many systems engineering domains are naturally described by hypergraphs, where a single relation (hyperedge) connects an arbitrary set of nodes.  UDDL requires treating participant paths of associations as first-class citizens when modeling, enabling the definition of semantic relationships between \textit{paths} rather than merely between Entities and Observables~\parencite{OpenGroup2023UDDL}, requiring a hypergraph representation.  As OWL does not natively support modeling of hypergraphs, we utilize the $ N $-ary Relation Pattern (Reification) to transform complex relationships into distinct individuals within the ontology.  By combining this reification with OWL Property Chain Axioms, UDDL path-centric logic can be converted to the OWL 2 DL framework.
+
+The following subsections describe how each conceptual UDDL meta-model element is mapped to its OWL counterpart.
 
 \subsection{Containers}
 
@@ -429,11 +369,11 @@ UDDL conceptual Associations are mapped to \texttt{owl:Class}, inheriting from t
 
 \subsection{Query}
 
-The UDDL query language is primarily a Selection and Projection language designed to retrieve specific data semantic definitions by traversing the domain model.  It traverses the model graph through a series of \texttt{JOIN} operations and selects specific Observables.  To enable automated verification, we convert these specifications into SPARQL, the standard query language for the Semantic Web.  This transformation bridges the gap between the relational style of UDDL (tables and joins) and the graph style of SPARQL (nodes and edges) using a two-step process: (1) Path Resolution and (2) Graph Pattern Generation.
+The UDDL Query grammar defines a SQL-like language for specifying data semantics through Selection and Projection.  It traverses the model graph through a series of \texttt{JOIN} operations and selects specific Observables.  To enable automated verification, we convert these specifications into SPARQL patterns using a two-step process: path resolution and graph pattern generation.
 
-\subsubsection{Step 1: Path Resolution}
+For the path resolution step, the UDDL query specification is analyzed to trace the absolute navigational path from a root entity to every join alias.  This step resolves complex topological requirements, such as ``Diamond Joins'', where an entity must satisfy multiple incoming relationships simultaneously.
 
-First, we analyze the UDDL query to determine exactly how every piece of data is connected to the root entity.  We construct an \textit{Alias Map} ($ \mathcal{M} $), which traces the full navigational path from the \texttt{FROM} entity to every \texttt{JOIN} alias.  Unlike a standard database query plan which executes joins in steps, this map calculates the absolute path for every participant in the query.
+For the graph pattern generation step, the resolved paths are transformed into SPARQL triple patterns.  Each UDDL alias becomes a SPARQL variable, and each relationship becomes a logic statement.  By using shared variables for converged paths, the engine enforces the precise structural and semantic requirements of the system architecture.
 
 \begin{table*}[t]
 \centering
@@ -442,39 +382,22 @@ First, we analyze the UDDL query to determine exactly how every piece of data is
     \rowcolor{tableheader}
     \textbf{\headingfont UDDL Component} & \textbf{\headingfont Logic} & \textbf{\headingfont SPARQL Graph Representation} \\
     \addlinespace[4pt]
-    \texttt{FROM Entity AS a} & \textbf{Root}: The starting point of the graph traversal. & Root Variable $ ?a $ \\
+    \texttt{FROM Entity AS a} & \textbf{Root}: Root starting point. & Root Variable $ ?a $ \\
     \addlinespace[4pt]
-    \texttt{JOIN Target AS b ON a.role} & \textbf{Edge}: A traversal from one entity to another via a relationship. & Triple Pattern $ (?a \text{ :role } ?b) $ \\
+    \texttt{JOIN Target AS b ON a.role} & \textbf{Edge}: Edge traversal. & Triple Pattern $ (?a \text{ :role } ?b) $ \\
     \addlinespace[4pt]
-    \texttt{SELECT b.attr} & \textbf{Projection}: Identifying the specific data value to retrieve. & Select Variable $ ?b\_attr $ from $ (?b \text{ :attr } ?b\_attr) $ \\
+    \texttt{SELECT b.attr} & \textbf{Projection}: Data projection. & Select Variable $ ?b\_attr $ from $ (?b \text{ :attr } ?b\_attr) $ \\
     \addlinespace[4pt]
-    \texttt{AND} (in Joins) & \textbf{Convergence}: Requiring an entity to satisfy multiple relationships simultaneously. & Shared Variable $ ?b $ used in multiple patterns (e.g., $ ?a \to ?b $ AND $ ?c \to ?b $) \\
+    \texttt{AND} (in Joins) & \textbf{Convergence}: Path convergence. & Shared Variable $ ?b $ used in multiple patterns (e.g., $ ?a \to ?b $ AND $ ?c \to ?b $) \\
     \bottomrule
 \end{tabularx}
 \caption{Mapping UDDL Query Components to Semantic Graph Patterns.  This table outlines the formal translation of UDDL query logic into the graph-based structures of SPARQL.  It bridges the gap between the relational style of UDDL (using tables and joins) and the triple-based model of Semantic Web Technologies (using nodes and edges).  By mapping SQL-like components to specific graph patterns, we enable automatic verification of the semantics of data interfaces, satisfying the precise topological and semantic requirements of the system architecture.}
 \label{table:ast_mapping}
 \end{table*}
 
-Crucially, this step resolves complex constraints like ``Diamond Joins'' or \texttt{AND} conditions.  If a UDDL query specifies that an entity $ D $ must be joined to both $ B $ and $ C $ (e.g., \texttt{JOIN D ON D.ref1 = B AND D.ref2 = C}), the Alias Map records two distinct paths reaching the same alias $ D $.  This captures the requirement that $ D $ must be the intersection (or convergence) of these two paths.
-
-\subsubsection{Step 2: Graph Pattern Generation}
-
-In the second phase, the resolved paths are converted into a SPARQL query pattern.  Each unique alias in the UDDL query becomes a variable in the SPARQL query (e.g., alias \texttt{sensor} becomes variable \texttt{?sensor}).  Each step in the path becomes a logic statement (a ``triple pattern'') that the data must satisfy.
-
-The logical ``AND'' is enforced implicitly by the structure of the graph pattern.  By using the same variable name for the destination of multiple paths, we constrain the query engine to find only those data instances that satisfy all incoming relationships.  For example, if the map contains paths $ A \to B \to D $ and $ A \to C \to D $, the generated SPARQL will require the variable $ ?d $ to be connected to both $ ?b $ and $ ?c $.  If no such data exists in the system that satisfies this topology, the query returns no results, correctly indicating a semantic mismatch or missing data.
-
 Table \ref{table:ast_mapping} summarizes how the primary components of a UDDL query (Selection, Roots, Joins, and Logic) map to the graph-based concepts of SPARQL.
 
 \section{Methods} \label{sec:methods}
-
-% \begin{figure*}[t]
-%   \centering
-%   \colfig{figures/ontology-diagram.png}
-%   \caption{Reference Satellite Ontology}
-%   \label{fig:satellite_ontology}
-% \end{figure*}
-
-% We generated example Interface Control Documents (ICDs) based on a generic satellite design, provided in the \nameref{sec:Appendix}.  Based on these ICDs, we then created a reference satellite OWL ontology in Prot\'eg\'e and a UDDL data model using the PHENOM\textregistered{} modeling environment, and exported to XMI~\parencite{musen2015protege, phenom}.  The reference satellite ontology captured the structure of the satellite system components and their relationships from a system viewpoint.  The UDDL data model captured the interface semantics using the UDDL Query Language backed by a conceptual Entity and Association data model.  A diagram of the reference ontology is shown in Figure \ref{fig:satellite_ontology} and Table \ref{tab:uddl_summary} presents a summary of the data model constructed based on the ICD content.  The UDDL data model contains examples of Generalizations, Entities with multiple compositions, Associations with simple and complex participant paths, as well as UDDL Query specifications.  The FACE Shared Data Model (SDM)~\parencite{sdm_v3_1_15} provides examples for Domain, Basis Entity, and Observable model elements.  The set of Queries generated from the example satellite ICDs are shown in Table \ref{tab:query_examples}.
 
 We generated an example Interface Control Document (ICD) based on a generic satellite design (See \nameref{sec:Appendix}).  Based on this ICD, we created a UDDL data model using the PHENOM\textregistered{} modeling environment, and exported the model as XMI~\parencite{musen2015protege, phenom}.  The UDDL data model (summarized in Table \ref{tab:uddl_summary}) captured the interface semantics using the UDDL Query Language backed by a conceptual Entity and Association data model.
 
@@ -556,7 +479,7 @@ The generated ontology was loaded into Prot\'eg\'e with the HermiT reasoner conf
 
 \section{Analysis and Discussion} \label{sec:analysis}
 
-The conversion process effectively addressed several core challenges in representing UDDL data models within an OWL framework.  Our results show that by mapping Observables to disjoint OWL classes and applying closure axioms, reasoning engines can programmatically detect mismatches, such as a temperature sensor incorrectly defined as a source for mass data.  To resolve path-centric logic, we addressed UDDL's reliance on complex Participant Paths which requires a hypergraph representation that is not natively supported by OWL's binary structure.  The successful use of the $N$-ary Relation pattern to reify paths allowed the SPARQL engine to satisfy convergence requirements, such as ``Diamond Joins'', by binding multiple graph patterns to shared variables.  Finally, the sensitivity of the SPARQL queries where minor semantic modifications resulted in the return of an empty set confirms that the translation process preserves the rigor of the original UDDL specification.  This ensures that the system identifies only those data instances that satisfy the precise topological and semantic requirements of the interface.
+The conversion process effectively addressed core challenges in representing UDDL data models within the OWL framework.  Our results show that by mapping UDDL Observables to disjoint OWL classes and applying closure axioms, reasoning engines can programmatically detect mismatches.  To resolve path-centric logic, we addressed UDDL's reliance on complex Participant Paths which requires a hypergraph representation that is not natively supported by OWL's binary structure.  The successful use of the $N$-ary Relation pattern to reify paths allowed the SPARQL engine to satisfy convergence requirements, such as ``Diamond Joins'', by binding multiple graph patterns to shared variables.  Note that individuals and generated property chain axioms were required for verification of interface semantics, as the structure of the Association was not fully representable using OWL class and Object Property constructs.  The sensitivity of the SPARQL queries where minor semantic modifications resulted in the return of an empty set confirms that the translation process preserves the rigor of the original UDDL specification.  This ensures that the system identifies only those data instances that satisfy the precise topological and semantic requirements of the interface.
 
 The mapping of UDDL constructs to OWL enables a shift from manual, subjective interface review toward objective, machine-interpretable verification.  Automating these tests and verifications reduces the effort required to detect semantically incoherent definitions long before physical integration, reducing unplanned effort and interoperability gaps.  These reasoning capablities are particularly valuable for large-scale systems with thousands or tens of thousands of complexly-related Entities and Associations, where manual review is infeasible.  For programs already aligned with FACE or SOSA that have semantically-enabled UDDL data models, these inference and verification capabilities may be immediately applicable using the ontology generation methods proposed in this work.
 
@@ -564,7 +487,11 @@ An assumption in this work is that we may only consider conceptual UDDL data mod
 
 Mapping UDDL Domains and Domain-Specific Data Models (DSDMs) to distinct ontologies allows domain-specific vocabularies to become modular and reusable across different system models.  This aligns with strategic initiatives like MOSA and SOSA to ensure semantic context is preserved across disparate systems.  The reuse of DSDMs across systems and programs further enhances interoperability and reduces the effort required to create and maintain domain-specific ontologies and semantic verification pipelines similar to those proposed in this work.
 
-While the current methodology provides a robust foundation, further research is required to evaluate the scalability of reasoning over deep property chains in systems modeled with potentially thousands or tens of thousands of complexly-related Entities and Associations.  Automated ontology alignment techniques could further reduce the manual effort required to link reference system models with generated ontologies based UDDL data models, moving closer to fully autonomous semantic integration and verification pipelines.  Fuzzy SPARQL query matching techniques could further reduce the manual effort required to match UDDL query specifications to SPARQL query patterns and allow more flexibility in specifying and identifying congruent interface semantic specifications.
+Another aspect of automated conversion is how to translate modeling patterns and ``idioms''.  UDDL data modeling patterns such as the Observe and Assembly pattern are useful for building and expressing data semantics, but are not usually aligned with standard OWL ontology construction.  More complex, idiomatic models and ontologies likely must be considered and aligned to gain insights about the ergonomics of constructs arising from automated translation.
+
+The reverse mapping (OWL to UDDL) is not considered in this paper.  Most UDDL concepts have unambiguous mapping from UDDL to OWL, however, OWL allows for more constructs and relations than are easily mapped back to UDDL.  Future work should consider what restrictions on ontology construction must be enforced to guarantee two-mapping without loss of information.
+
+While the current methodology provides a robust foundation, further research is required to evaluate the scalability of reasoning over deep property chains in systems modeled with potentially thousands or tens of thousands of complexly-related Entities and Associations.  Automated ontology alignment techniques could further reduce the manual effort required to link reference system models with generated ontologies based UDDL data models, moving closer to fully autonomous semantic integration and verification pipelines.  We expect that ontology alignment would be assisted by properly encoding complex path participants from Associations within the structure of the ontology which may require extensions to RDF and/or OWL (e.g., see ontological hypergraph representation approaches in \cite{hartig2014foundations, hu2013semantic, demir2010biopax, fabregat2018reactome}).   Fuzzy SPARQL query matching techniques could further reduce the manual effort required to match UDDL query specifications to SPARQL query patterns and allow more flexibility in specifying and identifying congruent interface semantic specifications.
 
 \section{Conclusion} \label{sec:conclusion}
 
@@ -574,6 +501,8 @@ This paper has presented a formal mapping between the Universal Domain Descripti
 \section{Acknowledgments} \label{sec:acknowledgements}
 
 This work was conducted using Prot\'eg\'e.
+
+Google's Gemini 3 (Pro) was used to assist with \LaTeX\ typesetting.  All research, design, interpretation, and conclusions are original author work.
 
 \newpage
 \section{References}
@@ -601,7 +530,7 @@ This work was conducted using Prot\'eg\'e.
 
 \newpage
 
-\section{Appendix: Satellite System ICD} \label{sec:Appendix}
+\section{Appendix: Satellite Systems ICD} \label{sec:Appendix}
 
 \subsection{Passive Thermal Control: Venetian-blind Louvers} \label{section:venetian_blind_louvers}
 
