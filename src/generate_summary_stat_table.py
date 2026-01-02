@@ -339,7 +339,7 @@ def generate_summary_stats(face_file_path):
         \\textit{{Compositions}}: {assembly_compositions_str} \\newline
         \\textit{{Participants}}: {assembly_participants_str}
     \\end{{tabularx}}
-    \\caption{{Summary statistics of the UDDL Conceptual Data Model (CDM). The table presents the total counts of core modeling elements---Entities, Associations, Compositions, and Participants, as well as Query statistics. It identifies the most central elements based on their structural connectivity and property density. Additionally, it highlights representative associations for the Observation pattern (\\textit{{Observe}}) and the Assembly pattern (\\textit{{PartOf}}) with their respective compositions and participants.}}
+    \\caption{{Summary statistics of the UDDL Conceptual Data Model (CDM). The table presents the total counts of core modeling elements: Entities, Associations, Compositions, and Participants, as well as Query statistics. It identifies the most central elements based on their structural connectivity and property density. Additionally, it highlights representative associations for the Observation pattern (\\textit{{Observe}}) and the Assembly pattern (\\textit{{PartOf}}) with their respective compositions and participants.}}
     \\label{{tab:uddl_summary}}
     \\end{{table*}}
 \\endgroup
