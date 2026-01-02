@@ -234,6 +234,19 @@ def generate_summary_stats(face_file_path):
             return "None"
         # Join with commas, escape underscores
         return ", ".join(items).replace('_', '\\_')
+    
+    # Formatting helper for participants (one per line with indentation)
+    def format_participants(items):
+        if not items:
+            return "None"
+        # Format each participant on a new line with indentation, escape underscores
+        escaped_items = [item.replace('_', '\\_') for item in items]
+        if len(escaped_items) == 1:
+            return escaped_items[0]
+        # First item on same line, rest indented to align with text after "Participants: "
+        # We use phantom to match the width of "\textit{Participants}: "
+        indent = "\\phantom{\\textit{Participants}: }"
+        return escaped_items[0] + "".join(f"\\newline{indent}" + item for item in escaped_items[1:])
 
     # Prepare strings for best entity/assoc
     best_entity_display = best_entity.replace('_', '\\_') if best_entity else 'N/A'
@@ -241,17 +254,17 @@ def generate_summary_stats(face_file_path):
     
     best_assoc_display = best_assoc.replace('_', '\\_') if best_assoc else 'N/A'
     assoc_compositions_str = format_list(association_composition_details[best_assoc])
-    assoc_participants_str = format_list(association_participant_details[best_assoc])
+    assoc_participants_str = format_participants(association_participant_details[best_assoc])
     
     # Prepare strings for Observation Pattern
     observe_display = observe_assoc.replace('_', '\\_') if observe_assoc else 'N/A'
     observe_compositions_str = format_list(association_composition_details[observe_assoc]) if observe_assoc else "N/A"
-    observe_participants_str = format_list(association_participant_details[observe_assoc]) if observe_assoc else "N/A"
+    observe_participants_str = format_participants(association_participant_details[observe_assoc]) if observe_assoc else "N/A"
     
     # Prepare strings for Assembly Pattern
     assembly_display = assembly_assoc.replace('_', '\\_') if assembly_assoc else 'N/A'
     assembly_compositions_str = format_list(association_composition_details[assembly_assoc]) if assembly_assoc else "N/A"
-    assembly_participants_str = format_list(association_participant_details[assembly_assoc]) if assembly_assoc else "N/A"
+    assembly_participants_str = format_participants(association_participant_details[assembly_assoc]) if assembly_assoc else "N/A"
 
     # Parse queries to count characteristics
     import re

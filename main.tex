@@ -504,15 +504,15 @@ We generated an example Interface Control Document (ICD) based on a generic sate
 
         \textbf{Most Central Association}: SolarPanel\_Charges\_Battery (Score: 8) \newline
         \textit{Compositions}: Identifier, Power, ElectricCurrent, HealthState, Temperature, ElectricPotential \newline
-        \textit{Participants}: charger: SolarPanel, charged: Battery \par\vspace{6pt}
+        \textit{Participants}: charger: SolarPanel\newline\phantom{\textit{Participants}: }charged: Battery \par\vspace{6pt}
 
         \textbf{Observation Pattern}: TemperatureSensor\_Observe\_LouverFrame \newline
         \textit{Compositions}: Identifier \newline
-        \textit{Participants}: observer: TemperatureSensor, observed: Frame\_PartOf\_Louver $\to$ part \par\vspace{6pt}
+        \textit{Participants}: observer: TemperatureSensor\newline\phantom{\textit{Participants}: }observed: Frame\_PartOf\_Louver $\to$ part \par\vspace{6pt}
 
         \textbf{Assembly Pattern}: Blade\_PartOf\_Louver \newline
         \textit{Compositions}: Identifier, HealthState \newline
-        \textit{Participants}: assembly: Louver, part: Blade
+        \textit{Participants}: assembly: Louver\newline\phantom{\textit{Participants}: }part: Blade
     \end{tabularx}
     \caption{Summary statistics of the UDDL Conceptual Data Model (CDM). The table presents the total counts of core modeling elements---Entities, Associations, Compositions, and Participants, as well as Query statistics. It identifies the most central elements based on their structural connectivity and property density. Additionally, it highlights representative associations for the Observation pattern (\textit{Observe}) and the Assembly pattern (\textit{PartOf}) with their respective compositions and participants.}
     \label{tab:uddl_summary}
@@ -525,7 +525,7 @@ To verify the semantic validity, we created instances for system data observatio
 
 \section{Results} \label{sec:results}
 
-The UDDL data model contains examples of Generalizations, Entities with multiple compositions, Associations with simple and complex participant paths, as well as UDDL Query specifications.  The FACE Shared Data Model (SDM)~\parencite{sdm_v3_1_15} provides examples for Domain, Basis Entity, and Observable model elements.  The set of Queries generated from the example satellite ICDs are shown in Table \ref{tab:query_examples}.  Common UDDL data modeling patterns were used to describe the relationships required to define semantics as presented in the ICD, e.g., the Observation pattern and Assembly pattern.  Table \ref{tab:uddl_summary} shows examples of Associations using these patterns.
+The UDDL data model contains examples of Generalizations, Entities with multiple compositions, Associations with simple and complex participant paths, as well as UDDL Query specifications.  The FACE Shared Data Model (SDM)~\parencite{sdm_v3_1_15} provides examples for Domain, Basis Entity, and Observable model elements.  The set of Queries generated from the example satellite ICDs are shown in Table \ref{tab:example_queries}.  Common UDDL data modeling patterns were used to describe the relationships required to define semantics as presented in the ICD, e.g., the Observation pattern and Assembly pattern.  Table \ref{tab:uddl_summary} shows examples of Associations using these patterns.
 
 The generated ontology was loaded into Prot\'eg\'e with the HermiT reasoner configured.  The reasoner verified that there were no logical contradictions.  Table \ref{tab:example_queries} shows an example of the results of the UDDL Query specification conversion to SPARQL queries against the generated ontology.  All SPARQL queries returned the expected sets of individuals indicating that the system contains the expected data observations based on the interfaces specifications.  Any changes to the UDDL Query specifications resulted in SPARQL queries that returned no results indicating the expected semantic inconsistency (i.e., interfaces that require data that is not present in the system).
 
