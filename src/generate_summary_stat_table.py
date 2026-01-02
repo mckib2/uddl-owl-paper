@@ -272,6 +272,12 @@ def generate_summary_stats(face_file_path):
 
     total_queries = 0
     total_projected_characteristics = 0
+    total_entities_in_queries = 0
+    total_joins = 0
+    total_join_conditions = 0
+    
+    # Per-query statistics for complexity metrics
+    query_details = []
 
     for elem in root.iter():
         xmi_type = elem.get(f"{{{ns['xmi']}}}type", "")
@@ -290,7 +296,24 @@ def generate_summary_stats(face_file_path):
                     # Clean up query string if needed (e.g. remove XML entities if any, though ElementTree handles basics)
                     parser = UDDLQueryParser(specification)
                     ast = parser.parse()
-                    total_projected_characteristics += len(ast.projections)
+                    
+                    num_projections = len(ast.projections)
+                    num_entities = len(ast.from_clause.entities)
+                    num_joins = len(ast.from_clause.joins)
+                    num_join_conditions = sum(len(join.on) for join in ast.from_clause.joins)
+                    
+                    total_projected_characteristics += num_projections
+                    total_entities_in_queries += num_entities
+                    total_joins += num_joins
+                    total_join_conditions += num_join_conditions
+                    
+                    # Store per-query stats for complexity metrics
+                    query_details.append({
+                        'projections': num_projections,
+                        'entities': num_entities,
+                        'joins': num_joins,
+                        'join_conditions': num_join_conditions
+                    })
                 except Exception:
                     # If parsing fails, just count the query but not characteristics
                     pass
@@ -298,6 +321,32 @@ def generate_summary_stats(face_file_path):
         # Also check for 'query' tags if structure is different
         # Adjust based on actual .face file structure if needed. 
         # Assuming 'conceptual:Query' is the element type based on standard UDDL usage.
+    
+    # Calculate query complexity metrics
+    avg_projections_per_query = 0
+    avg_entities_per_query = 0
+    avg_joins_per_query = 0
+    avg_join_conditions_per_query = 0
+    max_projections_in_query = 0
+    max_entities_in_query = 0
+    max_joins_in_query = 0
+    max_join_conditions_in_query = 0
+    
+    if total_queries > 0:
+        avg_projections_per_query = total_projected_characteristics / total_queries
+        avg_entities_per_query = total_entities_in_queries / total_queries
+        avg_joins_per_query = total_joins / total_queries
+        avg_join_conditions_per_query = total_join_conditions / total_queries
+        
+        for q_detail in query_details:
+            if q_detail['projections'] > max_projections_in_query:
+                max_projections_in_query = q_detail['projections']
+            if q_detail['entities'] > max_entities_in_query:
+                max_entities_in_query = q_detail['entities']
+            if q_detail['joins'] > max_joins_in_query:
+                max_joins_in_query = q_detail['joins']
+            if q_detail['join_conditions'] > max_join_conditions_in_query:
+                max_join_conditions_in_query = q_detail['join_conditions']
 
     # Generate LaTeX Table
     # Using tabularx and matching template style (gray header, no vertical lines)
@@ -311,7 +360,7 @@ def generate_summary_stats(face_file_path):
     \\renewcommand{{\\arraystretch}}{{1.5}}
     \\begin{{tabularx}}{{\\textwidth}}{{@{{}} >{{\\sffamily\\raggedright\\arraybackslash}}p{{0.35\\textwidth}} >{{\\sffamily\\raggedright\\arraybackslash}}X @{{}}}}
         \\rowcolor{{tableheader}}
-        \\headingfont\\bfseries Summary Statistics & \\headingfont\\bfseries Model Examples \\\\
+        \\headingfont\\bfseries UDDL Data Model Statistics & \\headingfont\\bfseries Model Examples \\\\
         \\addlinespace[4pt]
         % Left Column: Statistics
         \\begin{{tabular}}[t]{{@{{}}l r@{{}}}}
@@ -320,7 +369,13 @@ def generate_summary_stats(face_file_path):
             Total Compositions: & {total_compositions} \\\\
             Total Participants: & {total_participants} \\\\
             Total Queries: & {total_queries} \\\\
-            Total Projected Characteristics: & {total_projected_characteristics}
+            Total Projected Characteristics: & {total_projected_characteristics} \\\\
+            Avg Projections/Query: & {avg_projections_per_query:.1f} \\\\
+            Avg Entities/Query: & {avg_entities_per_query:.1f} \\\\
+            Avg JOINs/Query: & {avg_joins_per_query:.1f} \\\\
+            Avg Join Conditions/Query: & {avg_join_conditions_per_query:.1f} \\\\
+            Max Projections: & {max_projections_in_query} \\\\
+            Max Join Conditions: & {max_join_conditions_in_query}
         \\end{{tabular}}
         &
         % Right Column: Examples
@@ -339,7 +394,7 @@ def generate_summary_stats(face_file_path):
         \\textit{{Compositions}}: {assembly_compositions_str} \\newline
         \\textit{{Participants}}: {assembly_participants_str}
     \\end{{tabularx}}
-    \\caption{{Summary statistics of the UDDL Conceptual Data Model (CDM). The table presents the total counts of core modeling elements: Entities, Associations, Compositions, and Participants, as well as Query statistics. It identifies the most central elements based on their structural connectivity and property density. Additionally, it highlights representative associations for the Observation pattern (\\textit{{Observe}}) and the Assembly pattern (\\textit{{PartOf}}) with their respective compositions and participants.}}
+    \\caption{{Summary statistics of the UDDL Conceptual Data Model (CDM). The table presents the total counts of core modeling elements: Entities, Associations, Compositions, and Participants, as well as Query statistics including complexity metrics (averages and maximums for projections, entities, JOINs, and join conditions per query). It identifies the most central elements based on their structural connectivity and property density. Additionally, it highlights representative associations for the Observation pattern (\\textit{{Observe}}) and the Assembly pattern (\\textit{{PartOf}}) with their respective compositions and participants.}}
     \\label{{tab:uddl_summary}}
     \\end{{table*}}
 \\endgroup
