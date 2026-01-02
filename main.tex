@@ -372,13 +372,13 @@ UDDL conceptual Associations are mapped to \texttt{owl:Class}, inheriting from t
       \rowcolor{tableheader}
       \textbf{\headingfont UDDL Component} & \textbf{\headingfont Logic} & \textbf{\headingfont SPARQL Graph Representation} \\
       \addlinespace[4pt]
-      \texttt{FROM Entity AS a} & \textbf{Root}: Root starting point. & Root Variable $ ?a $ \\
+      \texttt{FROM Entity AS a} & Root starting point. & Root Variable $ ?a $ \\
       \addlinespace[4pt]
-      \texttt{JOIN Target AS b ON a.role} & \textbf{Edge}: Edge traversal. & Triple Pattern $ (?a \text{ :role } ?b) $ \\
+      \texttt{JOIN Target AS b ON a.role} & Edge traversal. & Triple Pattern $ (?a \text{ :role } ?b) $ \\
       \addlinespace[4pt]
-      \texttt{SELECT b.attr} & \textbf{Projection}: Data projection. & Select Variable $ ?b\_attr $ from $ (?b \text{ :attr } ?b\_attr) $ \\
+      \texttt{SELECT b.attr} & Data projection. & Select Variable $ ?b\_attr $ from $ (?b \text{ :attr } ?b\_attr) $ \\
       \addlinespace[4pt]
-      \texttt{AND} (in Joins) & \textbf{Convergence}: Path convergence. & Shared Variable $ ?b $ used in multiple patterns (e.g., $ ?a \to ?b $ AND $ ?c \to ?b $) \\
+      \texttt{AND} (in Joins) & Path convergence. & Shared Variable $ ?b $ used in multiple patterns (e.g., $ ?a \to ?b $ AND $ ?c \to ?b $) \\
       \bottomrule
   \end{tabularx}
   \caption{Mapping UDDL Query Components to Semantic Graph Patterns.  This table outlines the formal translation of UDDL query logic into the graph-based structures of SPARQL.  It bridges the gap between the relational style of UDDL (using tables and joins) and the triple-based model of Semantic Web Technologies (using nodes and edges).  By mapping SQL-like components to specific graph patterns, we enable automatic verification of the semantics of data interfaces, satisfying the precise topological and semantic requirements of the system architecture.}
@@ -545,7 +545,7 @@ For programs adhering to Modular Open Systems Approaches (MOSA), the proposed me
 
 This work was conducted using Prot\'eg\'e.
 
-Google's Gemini 3 (Pro) was used to assist with \LaTeX\ typesetting.  All research, design, interpretation, and conclusions are original author work.
+Google's Gemini 3 (Pro) was used to assist with scripting and \LaTeX\ typesetting.  All generated code was reviewed and tested for correctness.  All research, design, interpretation, and conclusions are original author work.
 
 \newpage
 \section{References}
@@ -767,20 +767,20 @@ Multiple. There are usually more than one solar panel (fixed on a satellite pane
 
 \subsection{Operation and Telemetry Messages}
 
-Sun radiation reaches at a determined angle the solar cells, where photons excite the electron in the semiconductor and generates a \SI{2}{\volt} voltage per cell.  The electrical path stability is kept by the connection between Cells and the coverglass, with the substrate. The junction box collects the transformed solar energy and the panel strings terminate and combine to form the array output lines that feed the satellite power system. From the junction box, the generated power goes to the power management and distribution unit, which regulates the voltage, charges the batteries, and switches power to the different systems such as communications, payload, and attitude control subsystems. During periods of sunlight, solar power runs the satellite and charges the batteries; while during period of shadows, the batteries are the only supplier of power to the bus~\parencite{reddy2008planning}. 
+Sun radiation reaches at a determined angle the solar cells, where photons excite semiconductor electrons and generates \SI{2}{\volt} per cell.  The electrical path stability is kept by the connection between Cells and the coverglass, with the substrate. The junction box collects the transformed solar energy and the panel strings terminate and combine to form the array output lines that feed the satellite power system. From the junction box, the generated power goes to the power management and distribution unit, which regulates the voltage, charges the batteries, and switches power to subsystems. During periods of sunlight, solar power runs the satellite and charges the batteries while during period of shadows, the batteries supply power to the bus~\parencite{reddy2008planning}. 
 
 
 \begin{table*}[t]
     \centering
     \small
     \renewcommand{\arraystretch}{1.5}
-    \begin{tabularx}{\textwidth}{@{}A{0.22\textwidth}A{0.28\textwidth}>{\raggedright\arraybackslash}XA{0.14\textwidth}A{0.12\textwidth}A{0.10\textwidth}@{}}
+    \begin{tabularx}{\textwidth}{@{}A{0.22\textwidth}>{\raggedright\arraybackslash}XA{0.14\textwidth}A{0.12\textwidth}A{0.10\textwidth}@{}}
         \rowcolor{tableheader}
-        \headingfont\bfseries Telemetry Message & \headingfont\bfseries Trigger & \headingfont\bfseries Notes & \headingfont\bfseries Sender & \headingfont\bfseries Receiver & \headingfont\bfseries Multiplicity \\
+        \headingfont\bfseries Telemetry Message & \headingfont\bfseries Trigger & \headingfont\bfseries Sender & \headingfont\bfseries Receiver & \headingfont\bfseries Multiplicity \\
         \addlinespace[4pt]
-        SolarPanel\_config\_state & Periodic \& mode change occurrence. &  & Solar Panel & OBC & 1 \\
+        SolarPanel\_config\_state & Periodic \& mode change occurrence. & Solar Panel & OBC & 1 \\
         \addlinespace[4pt]
-        SolarPanel\_health\_info & Periodic \& Mechanical/Electrical fault alert. &  & Solar Panel & OBC & 1
+        SolarPanel\_health\_info & Periodic \& Mechanical/Electrical fault alert. & Solar Panel & OBC & 1
     \end{tabularx}
     \caption{Solar Panel Telemetry Message Overview}
     \label{tab:solar_panel_tm_overview}
@@ -790,7 +790,7 @@ Sun radiation reaches at a determined angle the solar cells, where photons excit
     \centering
     \small
     \renewcommand{\arraystretch}{1.5}
-    \begin{tabularx}{\textwidth}{@{}A{0.22\textwidth}>{\raggedright\arraybackslash}XA{0.08\textwidth}A{0.08\textwidth}A{0.25\textwidth}@{}}
+    \begin{tabularx}{\textwidth}{@{}A{0.22\textwidth}>{\raggedright\arraybackslash}XA{0.08\textwidth}A{0.15\textwidth}A{0.18\textwidth}@{}}
         \rowcolor{tableheader}
         \headingfont\bfseries ID & \headingfont\bfseries Description & \headingfont\bfseries Data type & \headingfont\bfseries Units & \headingfont\bfseries Update Periodicity \\
         \addlinespace[4pt]
