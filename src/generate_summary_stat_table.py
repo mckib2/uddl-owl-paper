@@ -372,7 +372,6 @@ def generate_summary_stats(face_file_path):
             Total Projected Characteristics: & {total_projected_characteristics} \\\\
             Avg Projections/Query: & {avg_projections_per_query:.1f} \\\\
             Avg Entities/Query: & {avg_entities_per_query:.1f} \\\\
-            Avg JOINs/Query: & {avg_joins_per_query:.1f} \\\\
             Avg Join Conditions/Query: & {avg_join_conditions_per_query:.1f} \\\\
             Max Projections: & {max_projections_in_query} \\\\
             Max Join Conditions: & {max_join_conditions_in_query}
